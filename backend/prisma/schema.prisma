@@ -1,0 +1,202 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleName {
+  ADMIN
+  MANAGER
+  OPERATOR
+  VIEWER
+}
+
+enum MovementType {
+  IN
+  OUT
+}
+
+enum AssetStatus {
+  IN_USE
+  AVAILABLE
+  MAINTENANCE
+  TRANSFERRED
+  DISPOSED
+}
+
+model Role {
+  id    String   @id @default(uuid())
+  name  RoleName @unique
+  users User[]
+}
+
+model User {
+  id             String              @id @default(uuid())
+  name           String
+  email          String              @unique
+  registration   String              @unique
+  passwordHash   String
+  active         Boolean             @default(true)
+  roleId         String
+  role           Role                @relation(fields: [roleId], references: [id])
+  createdAt      DateTime            @default(now())
+  movements      StockMovement[]
+  transfers      PatrimonyTransfer[]
+  auditLogs      AuditLog[]
+  sessionVersion Int                 @default(0)
+  resetTokens    PasswordReset[]
+}
+
+model Category {
+  id          String      @id @default(uuid())
+  name        String      @unique
+  description String      @default("")
+  active      Boolean     @default(true)
+  materials   Material[]
+  assets      Patrimony[]
+}
+
+model Supplier {
+  id          String          @id @default(uuid())
+  name        String
+  tradeName   String          @default("")
+  cnpj        String          @unique
+  phone       String          @default("")
+  email       String          @default("")
+  address     String          @default("")
+  responsible String          @default("")
+  notes       String          @default("")
+  active      Boolean         @default(true)
+  materials   Material[]
+  movements   StockMovement[]
+}
+
+model Department {
+  id            String              @id @default(uuid())
+  name          String              @unique
+  acronym       String
+  responsible   String              @default("")
+  phone         String              @default("")
+  email         String              @default("")
+  active        Boolean             @default(true)
+  movements     StockMovement[]
+  assets        Patrimony[]
+  transfersFrom PatrimonyTransfer[] @relation("from")
+  transfersTo   PatrimonyTransfer[] @relation("to")
+}
+
+model Material {
+  id          String          @id @default(uuid())
+  code        String          @unique
+  barcode     String?         @unique
+  name        String
+  description String          @default("")
+  categoryId  String
+  category    Category        @relation(fields: [categoryId], references: [id])
+  unit        String          @default("UN")
+  quantity    Int             @default(0)
+  minimum     Int             @default(5)
+  maximum     Int             @default(1000)
+  location    String          @default("")
+  shelf       String          @default("")
+  unitPrice   Decimal         @default(0) @db.Decimal(14, 2)
+  supplierId  String?
+  supplier    Supplier?       @relation(fields: [supplierId], references: [id])
+  active      Boolean         @default(true)
+  notes       String          @default("")
+  createdAt   DateTime        @default(now())
+  movements   StockMovement[]
+}
+
+model StockMovement {
+  id              String         @id @default(uuid())
+  materialId      String
+  material        Material       @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  type            MovementType
+  quantity        Int
+  previousBalance Int
+  currentBalance  Int
+  date            DateTime       @default(now())
+  createdAt       DateTime       @default(now())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  departmentId    String?
+  department      Department?    @relation(fields: [departmentId], references: [id])
+  supplierId      String?
+  supplier        Supplier?      @relation(fields: [supplierId], references: [id])
+  invoice         String         @default("")
+  process         String         @default("")
+  requestNumber   String         @default("")
+  receiver        String         @default("")
+  deliverer       String         @default("")
+  purpose         String         @default("")
+  notes           String         @default("")
+  unitPrice       Decimal        @default(0) @db.Decimal(14, 2)
+  reversalOfId    String?        @unique
+  reversalOf      StockMovement? @relation("reversal", fields: [reversalOfId], references: [id])
+  reversal        StockMovement? @relation("reversal")
+
+  @@index([materialId, date])
+  @@index([date, type])
+}
+
+model Patrimony {
+  id              String              @id @default(uuid())
+  number          String              @unique
+  name            String
+  description     String              @default("")
+  categoryId      String
+  category        Category            @relation(fields: [categoryId], references: [id])
+  brand           String              @default("")
+  model           String              @default("")
+  serialNumber    String              @default("")
+  acquisitionDate DateTime            @default(now())
+  value           Decimal             @default(0) @db.Decimal(14, 2)
+  condition       String              @default("Bom")
+  location        String              @default("")
+  departmentId    String
+  department      Department          @relation(fields: [departmentId], references: [id])
+  responsible     String
+  status          AssetStatus         @default(IN_USE)
+  transfers       PatrimonyTransfer[]
+}
+
+model PatrimonyTransfer {
+  id          String     @id @default(uuid())
+  patrimonyId String
+  patrimony   Patrimony  @relation(fields: [patrimonyId], references: [id], onDelete: Restrict)
+  fromId      String
+  from        Department @relation("from", fields: [fromId], references: [id])
+  toId        String
+  to          Department @relation("to", fields: [toId], references: [id])
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  responsible String
+  notes       String     @default("")
+  date        DateTime   @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  operation String
+  recordId  String
+  ip        String?
+  date      DateTime @default(now())
+
+  @@index([date])
+}
+
+model PasswordReset {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
