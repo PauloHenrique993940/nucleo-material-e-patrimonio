@@ -102,14 +102,14 @@ export function Dashboard() {
                 isAnimationActive={false}
                 dataKey="entrada"
                 name="Entradas"
-                fill="#24734e"
+                fill="#174b70"
                 radius={[4, 4, 0, 0]}
               />
               <Bar
                 isAnimationActive={false}
                 dataKey="saida"
                 name="Saídas"
-                fill="#d6ab32"
+                fill="#7395a8"
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>
@@ -141,7 +141,7 @@ export function Dashboard() {
                       <Cell
                         key={i}
                         fill={
-                          ['#22658a', '#d6ab32', '#7395a8', '#64777f', '#b9ccd5', '#b33434'][i % 6]
+                          ['#174b70', '#7395a8', '#415785', '#e0b53b', '#bfd0dd', '#506faa'][i % 6]
                         }
                       />
                     ))}
@@ -176,7 +176,7 @@ export function Dashboard() {
                   isAnimationActive={false}
                   dataKey="quantity"
                   name="Quantidade"
-                  fill="#22658a"
+                  fill="#174b70"
                   radius={[0, 4, 4, 0]}
                 />
               </BarChart>
@@ -201,7 +201,7 @@ export function Dashboard() {
                 type="monotone"
                 dataKey="estoque"
                 name="Saldo"
-                stroke="#22658a"
+                stroke="#174b70"
                 strokeWidth={3}
                 dot={false}
               />

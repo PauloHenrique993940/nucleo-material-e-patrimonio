@@ -11,7 +11,8 @@ export async function move(
   return db.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Material" WHERE id = ${data.materialId} FOR UPDATE`;
     const m = await tx.material.findUnique({ where: { id: data.materialId } });
-    if (!m || (!m.active && !reversalOfId)) throw new AppError(404, 'Material não disponível.');
+    if (!m || m.deletedAt || (!m.active && !reversalOfId))
+      throw new AppError(404, 'Material não disponível.');
     if (!reversalOfId && data.departmentId) {
       const department = await tx.department.findUnique({ where: { id: data.departmentId } });
       if (!department?.active) throw new AppError(400, 'Setor não disponível.');

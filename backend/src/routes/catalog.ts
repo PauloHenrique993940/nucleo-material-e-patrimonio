@@ -39,6 +39,8 @@ app.put('/materials/:id', allow(writers), async (req, res) => {
   const data = materialSchema.parse(req.body);
   const row = await db.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Material" WHERE id = ${String(req.params.id)} FOR UPDATE`;
+    const existing = await tx.material.findUnique({ where: { id: String(req.params.id) } });
+    if (!existing || existing.deletedAt) throw new AppError(404, 'Material não disponível.');
     const row = await tx.material.update({ where: { id: String(req.params.id) }, data });
     await tx.auditLog.create({
       data: {
@@ -53,14 +55,38 @@ app.put('/materials/:id', allow(writers), async (req, res) => {
   res.json(row);
 });
 app.delete('/materials/:id', allow(['ADMIN']), async (req, res) => {
+  const { mode, confirmation } = z
+    .object({
+      mode: z.enum(['preserve', 'permanent']).default('preserve'),
+      confirmation: z.string().optional(),
+    })
+    .parse(req.body || {});
   await db.$transaction(async (tx) => {
     const id = String(req.params.id);
     await tx.$queryRaw`SELECT id FROM "Material" WHERE id = ${id} FOR UPDATE`;
-    if (await tx.stockMovement.count({ where: { materialId: id } }))
-      throw new AppError(409, 'Material com histórico deve ser inativado.');
-    await tx.material.delete({ where: { id } });
+    const material = await tx.material.findUnique({ where: { id } });
+    if (!material) throw new AppError(404, 'Material não encontrado.');
+    if (mode === 'permanent') {
+      if (confirmation !== material.code)
+        throw new AppError(
+          400,
+          'Digite o código do material para confirmar a exclusão definitiva.',
+        );
+      await tx.$queryRaw`SELECT set_config('app.purge_material_id', ${id}, true)`;
+      // Delete reversals first so their originals do not trigger FK updates.
+      await tx.stockMovement.deleteMany({ where: { materialId: id, reversalOfId: { not: null } } });
+      await tx.stockMovement.deleteMany({ where: { materialId: id } });
+      await tx.material.delete({ where: { id } });
+    } else {
+      await tx.material.update({ where: { id }, data: { active: false, deletedAt: new Date() } });
+    }
     await tx.auditLog.create({
-      data: { userId: req.session.id, operation: 'EXCLUSÃO', recordId: id, ip: req.ip },
+      data: {
+        userId: req.session.id,
+        operation: mode === 'permanent' ? 'EXCLUSÃO DEFINITIVA' : 'REMOÇÃO DO CADASTRO',
+        recordId: id,
+        ip: req.ip,
+      },
     });
   });
   res.status(204).end();
@@ -191,7 +217,13 @@ app.post('/assets/:id/transfer', allow(['ADMIN', 'MANAGER']), async (req, res) =
 });
 app.get('/users', allow(['ADMIN']), async (_req, res) =>
   res.json(
-    (await db.user.findMany({ include: { role: true }, orderBy: { name: 'asc' } })).map(publicUser),
+    (
+      await db.user.findMany({
+        where: { deletedAt: null },
+        include: { role: true },
+        orderBy: { name: 'asc' },
+      })
+    ).map(publicUser),
   ),
 );
 app.post('/users', allow(['ADMIN']), async (req, res) => {

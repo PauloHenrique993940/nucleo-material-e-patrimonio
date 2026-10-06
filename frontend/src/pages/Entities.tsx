@@ -19,6 +19,7 @@ import { Modal } from '../components/Modal';
 import { EntityForm } from '../components/EntityForm';
 import { currency, date, status, roles, assetStatuses } from '../utils/format';
 import type { Row } from '../types';
+import { expiryInfo } from '../utils/expiry';
 function BarcodeLabel({ row }: { row: Row }) {
   const ref = useRef<SVGSVGElement>(null);
   const [error, setError] = useState('');
@@ -60,6 +61,7 @@ export function Entities({ kind }: { kind: string }) {
     [active, setActive] = useState(''),
     [category, setCategory] = useState(''),
     [stock, setStock] = useState(''),
+    [expiry, setExpiry] = useState(''),
     [sort, setSort] = useState('name'),
     [desc, setDesc] = useState(false),
     [page, setPage] = useState(1),
@@ -67,7 +69,10 @@ export function Entities({ kind }: { kind: string }) {
     [detail, setDetail] = useState<Row | null>(null),
     [transfer, setTransfer] = useState<Row | null>(null),
     [barcode, setBarcode] = useState<Row | null>(null),
-    [remove, setRemove] = useState<Row | null>(null);
+    [remove, setRemove] = useState<Row | null>(null),
+    [removeMode, setRemoveMode] = useState('preserve'),
+    [removeConfirmation, setRemoveConfirmation] = useState(''),
+    [removing, setRemoving] = useState(false);
   const writable = !!user && config.writers.includes(user.role);
   const query = useQuery<Row[]>({ queryKey: [kind], queryFn: () => api('/' + kind) });
   const lookups = useQuery<Record<string, Row[]>>({
@@ -89,7 +94,7 @@ export function Entities({ kind }: { kind: string }) {
   }, [params]);
   useEffect(() => {
     setPage(1);
-  }, [q, active, category, stock, kind]);
+  }, [q, active, category, stock, expiry, kind]);
   const value = (r: Row, key: string): any => key.split('.').reduce((v, k) => v?.[k], r);
   const filtered = (query.data || [])
     .filter(
@@ -97,7 +102,8 @@ export function Entities({ kind }: { kind: string }) {
         JSON.stringify(r).toLowerCase().includes(q.toLowerCase()) &&
         (!active || String(r.active) === active) &&
         (!category || r.categoryId === category) &&
-        (!stock || status(r.quantity, r.minimum) === stock),
+        (!stock || status(r.quantity, r.minimum) === stock) &&
+        (!expiry || expiryInfo(r.expiryDate).state === expiry),
     )
     .sort((a, b) => {
       const av = value(a, sort),
@@ -137,6 +143,19 @@ export function Entities({ kind }: { kind: string }) {
         >
           {s}
         </span>
+      );
+    }
+    if (key === 'expiryDate') {
+      const info = expiryInfo(r.expiryDate);
+      return (
+        <div className="expiry-cell">
+          <span>{info.date}</span>
+          <span
+            className={`badge ${info.state === 'expired' ? 'critical' : info.state === 'soon' ? 'low' : info.state === 'missing' ? 'muted' : 'normal'}`}
+          >
+            {info.label}
+          </span>
+        </div>
       );
     }
     if (key === 'active')
@@ -212,6 +231,19 @@ export function Entities({ kind }: { kind: string }) {
               ))}
             </select>
           )}
+          {kind === 'materials' && (
+            <select
+              aria-label="Filtrar por validade"
+              value={expiry}
+              onChange={(event) => setExpiry(event.target.value)}
+            >
+              <option value="">Todas as validades</option>
+              <option value="expired">Vencidos</option>
+              <option value="soon">Vencem em até 30 dias</option>
+              <option value="valid">Validade acima de 30 dias</option>
+              <option value="missing">Validade não informada</option>
+            </select>
+          )}
           <span className="record-count">{filtered.length} registros</span>
         </div>
         {query.isPending ? (
@@ -254,6 +286,7 @@ export function Entities({ kind }: { kind: string }) {
                       <td>
                         <div className="row-actions">
                           <button
+                            className="action-details"
                             aria-label={`Consultar ${r.name}`}
                             title="Consultar detalhes"
                             onClick={() => setDetail(r)}
@@ -261,7 +294,11 @@ export function Entities({ kind }: { kind: string }) {
                             <History size={17} />
                           </button>
                           {writable && (
-                            <button aria-label={`Editar ${r.name}`} onClick={() => setEditor(r)}>
+                            <button
+                              className="action-edit"
+                              aria-label={`Editar ${r.name}`}
+                              onClick={() => setEditor(r)}
+                            >
                               <Pencil size={17} />
                             </button>
                           )}
@@ -275,17 +312,28 @@ export function Entities({ kind }: { kind: string }) {
                           )}
                           {kind === 'materials' && (
                             <button
+                              className="action-barcode"
                               aria-label={`Código de barras de ${r.name}`}
                               onClick={() => setBarcode(r)}
                             >
                               <Barcode size={17} />
                             </button>
                           )}
-                          {kind === 'materials' && user?.role === 'ADMIN' && (
-                            <button aria-label={`Excluir ${r.name}`} onClick={() => setRemove(r)}>
-                              <Trash2 size={17} />
-                            </button>
-                          )}
+                          {['materials', 'users'].includes(kind) &&
+                            user?.role === 'ADMIN' &&
+                            r.id !== user.id && (
+                              <button
+                                className="action-delete"
+                                aria-label={`Excluir ${r.name}`}
+                                onClick={() => {
+                                  setRemoveMode('preserve');
+                                  setRemoveConfirmation('');
+                                  setRemove(r);
+                                }}
+                              >
+                                <Trash2 size={17} />
+                              </button>
+                            )}
                         </div>
                       </td>
                     </tr>
@@ -315,6 +363,7 @@ export function Entities({ kind }: { kind: string }) {
       {editor !== null && (
         <Modal
           title={`${editor ? 'Editar' : 'Novo'} ${config.singular}`}
+          wide={config.fields.length > 8}
           onClose={() => setEditor(null)}
         >
           <EntityForm
@@ -325,6 +374,7 @@ export function Entities({ kind }: { kind: string }) {
             initial={editor || {}}
             lookups={lookups.data}
             onSubmit={save}
+            onCancel={() => setEditor(null)}
           />
           {kind === 'assets' && editor && (
             <p className="hint">Para alterar o setor, utilize a ação de transferência.</p>
@@ -342,13 +392,15 @@ export function Entities({ kind }: { kind: string }) {
                   <dd>
                     {f.source
                       ? lookups.data?.[f.source]?.find((r) => r.id === detail[f.key])?.name || '—'
-                      : f.type === 'date'
-                        ? date(detail[f.key])
-                        : typeof detail[f.key] === 'boolean'
-                          ? detail[f.key]
-                            ? 'Sim'
-                            : 'Não'
-                          : String(detail[f.key] ?? '—')}
+                      : f.key === 'expiryDate'
+                        ? render(detail, 'expiryDate')
+                        : f.type === 'date'
+                          ? date(detail[f.key])
+                          : typeof detail[f.key] === 'boolean'
+                            ? detail[f.key]
+                              ? 'Sim'
+                              : 'Não'
+                            : String(detail[f.key] ?? '—')}
                   </dd>
                 </div>
               ))}
@@ -418,28 +470,116 @@ export function Entities({ kind }: { kind: string }) {
           <BarcodeLabel row={barcode} />
         </Modal>
       )}
-      {remove && (
-        <Modal title="Confirmar exclusão" onClose={() => setRemove(null)}>
+      {remove && kind === 'users' && (
+        <Modal title="Excluir usuário" onClose={() => !removing && setRemove(null)}>
           <p>
-            Excluir o material <strong>{remove.name}</strong>? Materiais com histórico devem ser
-            inativados.
+            Excluir o usuário <strong>{remove.name}</strong> ({remove.email})?
+          </p>
+          <p>
+            O usuário será removido da lista e perderá o acesso ao sistema imediatamente. Suas
+            movimentações e os registros de auditoria serão preservados.
           </p>
           <div className="form-actions">
-            <button onClick={() => setRemove(null)}>Cancelar</button>
+            <button disabled={removing} onClick={() => setRemove(null)}>
+              Cancelar
+            </button>
             <button
               className="danger"
+              disabled={removing}
               onClick={async () => {
+                setRemoving(true);
                 try {
-                  await api('/materials/' + remove.id, 'DELETE');
+                  await api('/users/' + remove.id, 'DELETE');
                   setRemove(null);
-                  toast('Material excluído.');
+                  toast('Usuário excluído.');
                   await invalidate();
                 } catch (e) {
                   toast((e as Error).message, true);
+                } finally {
+                  setRemoving(false);
                 }
               }}
             >
-              Excluir material
+              {removing ? 'Excluindo…' : 'Confirmar e excluir'}
+            </button>
+          </div>
+        </Modal>
+      )}
+      {remove && kind === 'materials' && (
+        <Modal title="Confirmar exclusão" onClose={() => !removing && setRemove(null)}>
+          <p>
+            Escolha como remover o material <strong>{remove.name}</strong>.
+          </p>
+          <label>
+            Tipo de exclusão
+            <select
+              value={removeMode}
+              onChange={(e) => {
+                setRemoveMode(e.target.value);
+                setRemoveConfirmation('');
+              }}
+              disabled={removing}
+            >
+              <option value="preserve">Remover dos cadastros e preservar o histórico</option>
+              <option value="permanent">
+                Apagar definitivamente o material e todas as movimentações dele
+              </option>
+            </select>
+          </label>
+          {removeMode === 'permanent' ? (
+            <>
+              <p className="field-error" role="alert">
+                Esta opção apaga o material, suas entradas, saídas e estornos. Não pode ser
+                desfeita.
+              </p>
+              <label>
+                Digite o código {remove.code} para confirmar
+                <input
+                  value={removeConfirmation}
+                  onChange={(e) => setRemoveConfirmation(e.target.value)}
+                  disabled={removing}
+                  autoComplete="off"
+                />
+              </label>
+            </>
+          ) : (
+            <p>
+              O material sairá dos cadastros e do estoque disponível. As movimentações permanecerão
+              no histórico. O código continuará reservado.
+            </p>
+          )}
+          <div className="form-actions">
+            <button disabled={removing} onClick={() => setRemove(null)}>
+              Cancelar
+            </button>
+            <button
+              className="danger"
+              disabled={
+                removing || (removeMode === 'permanent' && removeConfirmation !== remove.code)
+              }
+              onClick={async () => {
+                setRemoving(true);
+                try {
+                  await api('/materials/' + remove.id, 'DELETE', {
+                    mode: removeMode,
+                    confirmation: removeConfirmation,
+                  });
+                  setRemove(null);
+                  toast('Material excluído.');
+                  await invalidate();
+                  await cache.invalidateQueries({ queryKey: ['movements'] });
+                } catch (e) {
+                  toast((e as Error).message, true);
+                } finally {
+                  setRemoving(false);
+                }
+              }}
+            >
+              {removing
+                ? 'Removendo…'
+                : removeMode === 'permanent'
+                  ? 'Confirmar e apagar definitivamente'
+                  : 'Confirmar e remover'}
             </button>
           </div>
         </Modal>

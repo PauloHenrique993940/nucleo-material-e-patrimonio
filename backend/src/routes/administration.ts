@@ -35,6 +35,8 @@ administration.put('/users/:id', async (req, res) => {
     .extend({ active: z.boolean(), password: passwordSchema.optional() })
     .parse(req.body);
   const id = String(req.params.id);
+  const existing = await db.user.findUnique({ where: { id } });
+  if (!existing || existing.deletedAt) throw new AppError(404, 'Usuário não disponível.');
   if (id === req.session.id && (!d.active || d.role !== 'ADMIN'))
     throw new AppError(409, 'Você não pode remover seu próprio acesso administrativo.');
   const role = await db.role.findUniqueOrThrow({ where: { name: d.role } });
@@ -70,6 +72,24 @@ administration.put('/users/:id', async (req, res) => {
     active: u.active,
     role: u.role.name,
   });
+});
+administration.delete('/users/:id', async (req, res) => {
+  if (req.session.role !== 'ADMIN')
+    throw new AppError(403, 'Apenas administradores podem excluir usuários.');
+  const id = String(req.params.id);
+  if (id === req.session.id) throw new AppError(409, 'Você não pode excluir sua própria conta.');
+  await db.$transaction(async (tx) => {
+    const result = await tx.user.updateMany({
+      where: { id, deletedAt: null },
+      data: { active: false, deletedAt: new Date(), sessionVersion: { increment: 1 } },
+    });
+    if (!result.count) throw new AppError(404, 'Usuário não disponível.');
+    await tx.passwordReset.deleteMany({ where: { userId: id } });
+    await tx.auditLog.create({
+      data: { userId: req.session.id, operation: 'EXCLUSÃO USUÁRIO', recordId: id, ip: req.ip },
+    });
+  });
+  res.status(204).end();
 });
 administration.get('/suppliers/:id/history', async (req, res) =>
   res.json(

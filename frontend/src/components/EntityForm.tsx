@@ -8,11 +8,13 @@ export function EntityForm({
   initial = {},
   lookups = {},
   onSubmit,
+  onCancel,
 }: {
   fields: Field[];
   initial?: Partial<Row>;
   lookups?: Record<string, Row[]>;
   onSubmit: (data: any) => Promise<void>;
+  onCancel?: () => void;
 }) {
   const formId = useId();
   const shape: Record<string, z.ZodTypeAny> = {};
@@ -64,7 +66,9 @@ export function EntityForm({
                 : f.key === 'role'
                   ? 'VIEWER'
                   : f.type === 'date'
-                    ? new Date().toISOString().slice(0, 10)
+                    ? f.key === 'expiryDate'
+                      ? ''
+                      : new Date().toISOString().slice(0, 10)
                     : '');
     if (f.type === 'date' && initial[f.key]) defaults[f.key] = String(initial[f.key]).slice(0, 10);
   }
@@ -90,6 +94,10 @@ export function EntityForm({
       onSubmit={handleSubmit(async (d) => {
         const data = { ...d };
         for (const f of fields) {
+          if (f.key === 'expiryDate') {
+            data[f.key] = data[f.key] || null;
+            continue;
+          }
           if (f.type === 'date' && data[f.key])
             data[f.key] = new Date(String(data[f.key]) + 'T12:00:00').toISOString();
           if ((f.source || f.key === 'password') && !data[f.key]) delete data[f.key];
@@ -100,9 +108,21 @@ export function EntityForm({
       className="form-grid"
     >
       {fields.map((f) => (
-        <label key={f.key} className={f.type === 'textarea' ? 'span-2' : ''}>
-          {f.label}
-          {f.required && <span aria-hidden="true"> *</span>}
+        <label
+          key={f.key}
+          className={
+            f.type === 'textarea' ? 'span-2' : f.type === 'checkbox' ? 'checkbox-field' : ''
+          }
+        >
+          <span className="field-label">
+            {f.label}
+            {f.required && (
+              <span className="required-mark" aria-hidden="true">
+                {' '}
+                *
+              </span>
+            )}
+          </span>
           {f.type === 'select' ? (
             <select
               {...register(f.key)}
@@ -163,6 +183,11 @@ export function EntityForm({
         </label>
       ))}
       <div className="span-2 form-actions">
+        {onCancel && (
+          <button type="button" disabled={isSubmitting} onClick={onCancel}>
+            Cancelar
+          </button>
+        )}
         <button className="primary" disabled={isSubmitting} type="submit">
           {isSubmitting ? 'Salvando…' : 'Salvar'}
         </button>

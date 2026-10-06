@@ -21,6 +21,7 @@ lists.get('/materials', async (req, res) => {
   const order = z.enum(['asc', 'desc']).default('asc').parse(req.query.order);
   const paging = pagination(req.query);
   const where: Prisma.MaterialWhereInput = {
+    deletedAt: null,
     OR: [
       { name: { contains: q, mode: 'insensitive' } },
       { code: { contains: q, mode: 'insensitive' } },

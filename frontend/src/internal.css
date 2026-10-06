@@ -2,10 +2,17 @@
   --bg: #f3f5f7;
   --surface: #fff;
   --text: #28364f;
-  --muted: #6c7890;
+  --muted: #526078;
   --border: #dfe5ef;
   --primary: #174b70;
+  --primary-hover: #123e5d;
+  --button: #3d5585;
+  --button-hover: #2f4570;
+  --section-heading: #415785;
+  --panel: #f9fafc;
+  --focus: #506faa;
   --soft: #edf3f7;
+  --input: #ffffff;
   --accent: #e0b53b;
   --success: #24734e;
   --warning: #8a6400;
@@ -15,18 +22,23 @@
   background: var(--bg);
 }
 :root[data-theme='dark'] {
+  --panel: #1a2940;
   --bg: #111b2c;
   --surface: #1a2940;
   --text: #e0e8f5;
   --muted: #a5b3c9;
   --border: #30425f;
   --primary: #9ab6ed;
+  --button: #3d5585;
+  --button-hover: #2f4570;
+  --primary-hover: #a2e9f3;
+  --focus: #9ab6ed;
   --soft: #253753;
   --input: #15243b;
 }
 .app-shell .sidebar {
-  background: #15364c;
-  border-right: 1px solid #102c3f;
+  background: var(--section-heading);
+  border-right: 1px solid var(--button-hover);
   padding-top: 27px;
   color: #d6e1f3;
 }
@@ -43,7 +55,7 @@
   color: #bdcbe2;
 }
 .app-shell .nav-label {
-  color: #a9bad8;
+  color: #afc2e2;
 }
 .app-shell .sidebar nav {
   gap: 4px;
@@ -59,6 +71,7 @@
   border-radius: 10px;
 }
 .app-shell .sidebar nav a {
+  font-weight: 500;
   color: #d0dcf0;
   padding: 11px 14px;
   border-radius: 6px;
@@ -69,7 +82,7 @@
 }
 .app-shell .sidebar nav a.active {
   background: #ffffff14;
-  box-shadow: inset 3px 0 #e0b53b;
+  box-shadow: inset 3px 0 var(--accent);
   color: #fff;
 }
 .app-shell .sidebar nav a.active svg {
@@ -84,14 +97,14 @@
   padding-top: 18px;
 }
 .app-shell .sidebar-bottom small {
-  color: #b2c2dd;
+  color: #bdcbe2;
 }
 .app-shell .sidebar-bottom button {
-  color: #c4d3ea;
+  color: #d0dcf0;
 }
 .app-shell .avatar {
   background: #d7e1f4;
-  color: #304b7b;
+  color: #415785;
 }
 .workspace-institutional-bar {
   min-height: 30px;
@@ -102,7 +115,7 @@
   gap: 15px;
   background: #edf1f3;
   border-bottom: 1px solid #d7dfe4;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.5px;
   color: #526472;
 }
@@ -114,8 +127,32 @@
 }
 .app-shell .topbar {
   height: 75px;
-  border-bottom: 3px solid #d8e1f0;
+  background: var(--section-heading);
+  color: #fff;
+  border-bottom: 3px solid var(--accent);
   gap: 25px;
+}
+.app-shell .topbar .module-indicator small,
+.app-shell .topbar .user-label small {
+  color: #d7e1f4;
+}
+.app-shell .topbar-actions > button,
+.app-shell .notifications > button,
+.app-shell .topbar .mobile-menu {
+  color: #fff;
+  background: transparent;
+}
+.app-shell .topbar-actions > button:hover,
+.app-shell .notifications > button:hover,
+.app-shell .topbar .mobile-menu:hover {
+  background: #ffffff20;
+}
+.app-shell .topbar .user-label {
+  border-left-color: #ffffff40;
+}
+.app-shell .topbar .notification-panel,
+.app-shell .topbar .search-results {
+  color: var(--text);
 }
 .module-indicator {
   display: flex;
@@ -135,13 +172,13 @@
 }
 .module-indicator small {
   display: block;
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 1.2px;
   margin-bottom: 5px;
 }
 .module-indicator strong {
   display: block;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
 }
 .app-shell .global-search {
@@ -151,7 +188,7 @@
   max-width: 440px;
   min-height: 44px;
   gap: 10px;
-  background: var(--surface);
+  background: var(--input);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0 14px;
@@ -175,7 +212,7 @@
   border: 0;
   border-radius: 0;
   background: transparent;
-  font-size: 13px;
+  font-size: 15px;
 }
 .app-shell .global-search input:focus,
 .app-shell .global-search input:focus-visible {
@@ -224,16 +261,16 @@
 }
 .app-shell .date-chip {
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 13px;
 }
 .app-shell .dashboard-banner {
-  background: #e9edf5;
-  border-color: #d5deec;
+  background: var(--soft);
+  border-color: var(--border);
   border-radius: 8px;
-  border-left: 4px solid #536b99;
+  border-left: 4px solid var(--primary);
 }
 .app-shell .dashboard-banner h2 {
-  color: #30466d;
+  color: var(--primary);
   font-size: 23px;
 }
 .app-shell .dashboard-banner p {
@@ -259,8 +296,8 @@
 }
 .app-shell .stat-icon {
   border: 1px solid #d8e2f3;
-  background: #edf3f7;
-  color: #174b70;
+  background: var(--soft);
+  color: var(--primary);
   border-radius: 8px;
 }
 .app-shell .stat-icon.tone-2 {
@@ -274,24 +311,40 @@
   color: var(--danger);
 }
 .app-shell .card {
+  background: var(--panel);
   border-radius: 8px;
   border-color: var(--border);
   box-shadow: var(--shadow);
 }
 .app-shell .card-heading {
-  background: var(--soft);
-  border-bottom: 1px solid var(--border);
+  background: var(--section-heading);
+  color: #fff;
+  border-bottom: 3px solid #d0d9e9;
   border-radius: 7px 7px 0 0;
   padding: 15px 22px;
   margin: -22px -22px 22px;
   min-height: 51px;
 }
 .app-shell .card-heading h2 {
-  color: var(--primary);
-  font-size: 14px;
+  color: #fff;
+  font-size: 16px;
 }
 .app-shell .card-heading > span {
-  font-size: 10px;
+  color: #e0e8f5;
+  font-size: 12px;
+}
+.app-shell label,
+.app-shell th {
+  font-weight: 600;
+}
+.app-shell td {
+  line-height: 1.6;
+}
+.app-shell .card-heading a {
+  color: #fff;
+}
+.app-shell .stat-card {
+  background: var(--panel);
 }
 .app-shell th {
   background: var(--soft);
@@ -323,15 +376,15 @@
 .app-shell .primary {
   border-radius: 5px;
   color: #fff;
-  background: #174b70;
-  border-color: #123e5d;
+  background: var(--button);
+  border-color: var(--button-hover);
 }
 .app-shell .primary:hover {
-  background: #123e5d;
+  background: var(--button-hover);
 }
 .app-shell .brand > span {
-  color: #f0cf6b;
-  border-color: #e0b53b66;
+  color: #fff;
+  border-color: #ffffff38;
 }
 .app-shell .stat-icon.tone-4 {
   background: #e9f4ee;
@@ -344,10 +397,10 @@
   border-color: #ecd99c;
 }
 .app-shell .chart-legend {
-  color: #24734e;
+  color: var(--primary);
 }
 .app-shell .chart-legend span:last-child {
-  color: #8a6400;
+  color: var(--focus);
 }
 :root[data-theme='dark'] .app-shell .stat-icon.tone-2,
 :root[data-theme='dark'] .app-shell .stat-icon.tone-5 {
@@ -377,7 +430,7 @@
 }
 .app-shell .app-footer {
   background: var(--surface);
-  border-top: 3px solid #d8e1f0;
+  border-top: 3px solid #dfe5ef;
   padding: 18px 34px;
 }
 :root[data-theme='dark'] .workspace-institutional-bar {
@@ -423,7 +476,7 @@
   }
   .workspace-institutional-bar {
     padding: 7px 22px;
-    font-size: 8px;
+    font-size: 12px;
   }
   .app-shell .global-search {
     max-width: none;

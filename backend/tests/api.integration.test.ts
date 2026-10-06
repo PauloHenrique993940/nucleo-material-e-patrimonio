@@ -70,6 +70,62 @@ suite('API e PostgreSQL', () => {
       .send({ name: `Destino ${suffix}`, acronym: 'DST' });
     destinationId = destination.body.id;
   });
+  it('permite ao administrador excluir outros usuários e preserva a auditoria', async () => {
+    const role = await db.role.findUniqueOrThrow({ where: { name: 'ADMIN' } });
+    const target = await db.user.create({
+      data: {
+        name: 'Administrador removido',
+        email: `remove-${suffix}@test.local`,
+        registration: `remove-${suffix}`,
+        roleId: role.id,
+        passwordHash: await bcrypt.hash(password, 4),
+      },
+    });
+    const login = await request(app)
+      .post('/api/auth/login')
+      .send({ login: target.email, password });
+    expect(login.status).toBe(200);
+    expect(
+      (await request(app).delete(`/api/users/${target.id}`).auth(operatorToken, { type: 'bearer' }))
+        .status,
+    ).toBe(403);
+    expect(
+      (
+        await request(app)
+          .delete(`/api/users/${target.id}`)
+          .auth(login.body.token, { type: 'bearer' })
+      ).status,
+    ).toBe(409);
+    expect(
+      (await request(app).delete(`/api/users/${target.id}`).auth(token, { type: 'bearer' })).status,
+    ).toBe(204);
+    const users = await request(app).get('/api/users').auth(token, { type: 'bearer' });
+    expect(users.body.some((u: { id: string }) => u.id === target.id)).toBe(false);
+    expect(
+      (await request(app).get('/api/materials').auth(login.body.token, { type: 'bearer' })).status,
+    ).toBe(401);
+    expect(
+      (await request(app).post('/api/auth/login').send({ login: target.email, password })).status,
+    ).toBe(401);
+    expect(await db.auditLog.count({ where: { userId: target.id } })).toBeGreaterThan(0);
+    expect(
+      await db.auditLog.count({ where: { operation: 'EXCLUSÃO USUÁRIO', recordId: target.id } }),
+    ).toBe(1);
+    expect(
+      (
+        await request(app).put(`/api/users/${target.id}`).auth(token, { type: 'bearer' }).send({
+          name: target.name,
+          email: target.email,
+          registration: target.registration,
+          role: 'ADMIN',
+          active: true,
+        })
+      ).status,
+    ).toBe(404);
+    expect(
+      (await request(app).delete(`/api/users/${target.id}`).auth(token, { type: 'bearer' })).status,
+    ).toBe(404);
+  });
   afterAll(async () => {
     await db?.$disconnect();
     const shared = await import('../src/repositories/db.js');
@@ -121,6 +177,32 @@ suite('API e PostgreSQL', () => {
     expect(
       await db.auditLog.count({ where: { recordId: response.body.id, operation: 'ENTRADA' } }),
     ).toBe(1);
+  });
+  it('salva, consulta e remove a data de validade do material', async () => {
+    const data = {
+      code: `EXP-${suffix}`,
+      name: 'Material com validade',
+      categoryId,
+      expiryDate: '2027-05-20',
+    };
+    const created = await request(app)
+      .post('/api/materials')
+      .auth(token, { type: 'bearer' })
+      .send(data);
+    expect(created.status).toBe(201);
+    expect(created.body.expiryDate).toBe('2027-05-20T00:00:00.000Z');
+    const listed = await request(app).get('/api/materials').auth(token, { type: 'bearer' });
+    expect(listed.body.find((row: { id: string }) => row.id === created.body.id).expiryDate).toBe(
+      '2027-05-20T00:00:00.000Z',
+    );
+    const updated = await request(app)
+      .put(`/api/materials/${created.body.id}`)
+      .auth(token, { type: 'bearer' })
+      .send({ ...data, expiryDate: null });
+    expect(updated.status).toBe(200);
+    expect(
+      (await db.material.findUniqueOrThrow({ where: { id: created.body.id } })).expiryDate,
+    ).toBeNull();
   });
   it('nega saída superior ao estoque e não altera histórico', async () => {
     const before = await db.stockMovement.count({ where: { materialId } });
@@ -175,11 +257,95 @@ suite('API e PostgreSQL', () => {
       ).status,
     ).toBe(409);
     expect(
-      (await request(app).delete(`/api/materials/${materialId}`).auth(token, { type: 'bearer' }))
-        .status,
-    ).toBe(409);
+      (
+        await request(app)
+          .delete(`/api/materials/${materialId}`)
+          .auth(token, { type: 'bearer' })
+          .send({ mode: 'permanent', confirmation: 'incorreto' })
+      ).status,
+    ).toBe(400);
   });
   it('protege o histórico também no banco', async () => {
+    await expect(db.stockMovement.deleteMany({ where: { materialId } })).rejects.toThrow();
+  });
+  it('remove dos cadastros preservando histórico e permite exclusão definitiva confirmada', async () => {
+    const material = await db.material.create({
+      data: {
+        code: `DEL-${suffix}`,
+        name: 'Material de exclusão',
+        categoryId,
+        minimum: 0,
+        maximum: 100,
+      },
+    });
+    const movement = await request(app)
+      .post('/api/movements')
+      .auth(token, { type: 'bearer' })
+      .send({
+        materialId: material.id,
+        type: 'IN',
+        quantity: 5,
+        receiver: 'Servidor de teste',
+        notes: 'Teste de exclusão',
+      });
+    expect(movement.status).toBe(201);
+    const reversal = await request(app)
+      .post(`/api/movements/${movement.body.id}/reverse`)
+      .auth(token, { type: 'bearer' })
+      .send({ notes: 'Correção para teste' });
+    expect(reversal.status).toBe(200);
+    expect(
+      (
+        await request(app)
+          .delete(`/api/materials/${material.id}`)
+          .auth(operatorToken, { type: 'bearer' })
+          .send({ mode: 'preserve' })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await request(app)
+          .delete(`/api/materials/${material.id}`)
+          .auth(token, { type: 'bearer' })
+          .send({ mode: 'preserve' })
+      ).status,
+    ).toBe(204);
+    expect(
+      (await db.material.findUniqueOrThrow({ where: { id: material.id } })).deletedAt,
+    ).not.toBeNull();
+    expect(await db.stockMovement.count({ where: { materialId: material.id } })).toBe(2);
+    const listed = await request(app)
+      .get('/api/materials?active=false')
+      .auth(token, { type: 'bearer' });
+    expect(listed.body.some((row: { id: string }) => row.id === material.id)).toBe(false);
+    expect(
+      (
+        await request(app)
+          .put(`/api/materials/${material.id}`)
+          .auth(token, { type: 'bearer' })
+          .send({ ...material, unitPrice: 0, active: true })
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await request(app)
+          .delete(`/api/materials/${material.id}`)
+          .auth(token, { type: 'bearer' })
+          .send({ mode: 'permanent', confirmation: 'errado' })
+      ).status,
+    ).toBe(400);
+    expect(await db.stockMovement.count({ where: { materialId: material.id } })).toBe(2);
+    expect(
+      (
+        await request(app)
+          .delete(`/api/materials/${material.id}`)
+          .auth(token, { type: 'bearer' })
+          .send({ mode: 'permanent', confirmation: material.code })
+      ).status,
+    ).toBe(204);
+    expect(await db.material.findUnique({ where: { id: material.id } })).toBeNull();
+    expect(await db.stockMovement.count({ where: { materialId: material.id } })).toBe(0);
+    expect(await db.auditLog.count({ where: { recordId: material.id } })).toBeGreaterThan(0);
     await expect(db.stockMovement.deleteMany({ where: { materialId } })).rejects.toThrow();
   });
   it('transfere patrimônio e preserva o setor da transferência', async () => {

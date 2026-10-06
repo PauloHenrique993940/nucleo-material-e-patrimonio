@@ -47,6 +47,7 @@ model User {
   transfers      PatrimonyTransfer[]
   auditLogs      AuditLog[]
   sessionVersion Int                 @default(0)
+  deletedAt      DateTime?
   resetTokens    PasswordReset[]
 }
 
@@ -106,6 +107,8 @@ model Material {
   supplierId  String?
   supplier    Supplier?       @relation(fields: [supplierId], references: [id])
   active      Boolean         @default(true)
+  deletedAt   DateTime?
+  expiryDate  DateTime?       @db.Date
   notes       String          @default("")
   createdAt   DateTime        @default(now())
   movements   StockMovement[]

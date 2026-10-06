@@ -11,3 +11,5 @@ backups/
 .artifacts/
 .vercel/
 
+.vercel
+.env*

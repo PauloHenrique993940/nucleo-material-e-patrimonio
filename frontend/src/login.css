@@ -1,18 +1,21 @@
 .institutional-login.login-page {
   --surface: #ffffff;
   --text: #2d3645;
-  --muted: #626c7c;
+  --muted: #526078;
   --border: #cbd2de;
   --input: #ffffff;
   --primary: #174b70;
-  --soft: #edf1f7;
+  --primary-hover: #123e5d;
+  --focus: #506faa;
+  --accent: #e0b53b;
+  --soft: #edf3f7;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   background: #f3f5f7;
   color: var(--text);
   color-scheme: light;
-  font-family: Arial, 'Segoe UI', sans-serif;
+  font-family: 'Segoe UI', Arial, sans-serif;
 }
 .portal-utility {
   display: flex;
@@ -22,7 +25,7 @@
   background: #edf1f3;
   border-bottom: 1px solid #d7dfe4;
   color: #526472;
-  font-size: 11px;
+  font-size: 13px;
 }
 .portal-masthead {
   display: flex;
@@ -38,13 +41,13 @@
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  background: #174b70;
+  background: var(--primary);
   color: #fff;
   border: 3px double #c8d1e2;
   border-radius: 3px;
 }
 .portal-kicker {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 1.5px;
   color: #596c91;
   font-weight: 700;
@@ -58,18 +61,18 @@
 }
 .portal-masthead p {
   margin: 0;
-  font-size: 12px;
+  font-size: 14px;
   color: #647086;
 }
 .portal-module-strip {
   text-align: center;
-  background: #174b70;
+  background: var(--primary);
   color: #fff;
   padding: 11px 20px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 1.6px;
-  border-bottom: 4px solid #e0b53b;
+  border-bottom: 4px solid var(--accent);
 }
 .portal-breadcrumb {
   display: flex;
@@ -77,11 +80,11 @@
   gap: 9px;
   width: min(1080px, calc(100% - 48px));
   margin: 17px auto 0;
-  font-size: 11px;
+  font-size: 13px;
   color: #727a88;
 }
 .portal-breadcrumb strong {
-  font-weight: 400;
+  font-weight: 500;
   color: #3e527a;
 }
 .portal-content {
@@ -111,7 +114,7 @@
   color: white;
 }
 .portal-section-title h2 {
-  font-size: 12px;
+  font-size: 14px;
   margin: 0;
   color: white;
   font-weight: 700;
@@ -123,7 +126,7 @@
 }
 .institutional-login .portal-form-intro {
   text-align: center;
-  font-size: 12px;
+  font-size: 14px;
   margin: 0 0 26px;
   color: #566174;
 }
@@ -137,31 +140,33 @@
   grid-template-columns: 128px minmax(0, 1fr);
   align-items: center;
   gap: 8px 14px;
-  font-size: 12px;
-  font-weight: 400;
+  font-size: 14px;
+  font-weight: 600;
   color: #334361;
 }
 .institutional-login .login-form input {
   height: 39px;
   min-height: 39px;
   border-radius: 2px;
-  border-color: #bec7d6;
+  border-color: var(--border);
+  border-bottom-color: #a0a5ae;
   padding: 9px 11px;
-  font-size: 13px;
+  font-size: 15px;
   box-shadow: inset 0 1px 2px #273b5c07;
 }
 .institutional-login .login-form input:focus {
-  border-color: #506faa;
+  border-color: var(--focus);
+  box-shadow: inset 0 -1px var(--focus);
 }
 .institutional-login .password-field button {
   top: 1px;
   right: 2px;
   padding: 9px;
-  color: #5a6d8c;
+  color: #737780;
 }
 .institutional-login .field-error {
   grid-column: 2;
-  font-size: 11px;
+  font-size: 13px;
 }
 .institutional-login .login-form form .primary {
   width: auto;
@@ -172,10 +177,13 @@
   margin: 7px 0 0;
   border-radius: 3px;
   padding: 10px 23px;
-  font-size: 12px;
+  font-size: 14px;
   background: #3d5585;
   border-color: #2f4570;
   color: #fff;
+}
+.institutional-login .login-form form .primary:hover {
+  background: #2f4570;
 }
 .institutional-login .login-form .text-button,
 .institutional-login .login-form > a {
@@ -183,9 +191,9 @@
   width: fit-content;
   margin: 15px auto 24px;
   padding: 0;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 400;
-  color: #344f82;
+  color: var(--primary);
   text-decoration: underline;
 }
 .portal-session-note {
@@ -195,19 +203,19 @@
   gap: 9px;
   margin: 0 -40px;
   padding: 13px 22px;
-  background: #e8edf5;
+  background: var(--soft);
   border-top: 1px solid #d3dbe8;
   color: #53627a;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.5;
 }
 .portal-session-note svg {
   flex-shrink: 0;
 }
 .portal-guidance {
-  background: #efefe7;
-  border: 1px solid #d8dacf;
-  border-left: 3px solid #9baaca;
+  background: var(--soft);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--focus);
   margin-top: 22px;
   padding: 18px 23px;
   border-radius: 3px;
@@ -220,19 +228,19 @@
 }
 .portal-guidance-title h2 {
   margin: 0;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
 }
 .portal-guidance ul {
   padding-left: 21px;
   margin: 13px 0;
   list-style: disc;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.9;
   color: #5a6270;
 }
 .portal-guidance p {
-  font-size: 11px;
+  font-size: 13px;
   color: #646b74;
   margin: 0;
   line-height: 1.7;
@@ -245,9 +253,9 @@
   flex-wrap: wrap;
   gap: 10px 20px;
   border-top: 3px solid #becbe3;
-  background: #e7eaf0;
+  background: #f7f9fc;
   padding: 19px 24px;
-  font-size: 10px;
+  font-size: 12px;
   color: #606c80;
 }
 .portal-footer strong {
@@ -257,7 +265,7 @@
 @media (max-width: 600px) {
   .portal-utility {
     padding: 9px 18px;
-    font-size: 9px;
+    font-size: 12px;
   }
   .portal-utility > span:last-child {
     display: none;
@@ -272,7 +280,7 @@
     height: 51px;
   }
   .portal-kicker {
-    font-size: 8px;
+    font-size: 12px;
     letter-spacing: 0.9px;
   }
   .portal-masthead h1 {
@@ -281,16 +289,16 @@
     margin: 6px 0;
   }
   .portal-masthead p {
-    font-size: 10px;
+    font-size: 12px;
   }
   .portal-module-strip {
-    font-size: 9px;
+    font-size: 12px;
     letter-spacing: 0.8px;
     padding: 11px 18px;
   }
   .portal-breadcrumb {
     width: calc(100% - 36px);
-    font-size: 10px;
+    font-size: 12px;
   }
   .portal-content {
     width: calc(100% - 36px);
@@ -303,7 +311,7 @@
     display: flex;
     align-items: stretch;
     gap: 8px;
-    font-size: 12px;
+    font-size: 14px;
   }
   .institutional-login .login-form input {
     min-height: 44px;

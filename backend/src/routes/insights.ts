@@ -9,7 +9,10 @@ insights.get('/search', async (req, res) => {
   const contains = { contains: q, mode: 'insensitive' as const };
   const [materials, assets, suppliers, departments] = await Promise.all([
     db.material.findMany({
-      where: { OR: [{ name: contains }, { code: contains }, { barcode: contains }] },
+      where: {
+        deletedAt: null,
+        OR: [{ name: contains }, { code: contains }, { barcode: contains }],
+      },
       take: 8,
       select: { id: true, name: true, code: true },
     }),
@@ -36,7 +39,7 @@ insights.get('/dashboard', async (_req, res) => {
   const month = new Date(now.getFullYear(), now.getMonth(), 1);
   const start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
   const [materials, movements, latest, assets] = await Promise.all([
-    db.material.findMany({ where: { active: true }, include: { category: true } }),
+    db.material.findMany({ where: { active: true, deletedAt: null }, include: { category: true } }),
     db.stockMovement.findMany({
       where: { date: { gte: start, lte: now } },
       include: { material: { select: { name: true } } },
@@ -140,6 +143,7 @@ insights.get('/reports/:kind', async (req, res) => {
   let rows: Record<string, unknown>[];
   if (['stock', 'low', 'empty'].includes(kind)) {
     const materials = await db.material.findMany({
+      where: { deletedAt: null },
       include: { category: true, supplier: true },
       orderBy: { name: 'asc' },
     });
@@ -152,6 +156,9 @@ insights.get('/reports/:kind', async (req, res) => {
         Material: m.name,
         Categoria: m.category.name,
         Unidade: m.unit,
+        Validade: m.expiryDate
+          ? m.expiryDate.toISOString().slice(0, 10).split('-').reverse().join('/')
+          : 'Não informada',
         Quantidade: m.quantity,
         Mínimo: m.minimum,
         'Valor unitário': Number(m.unitPrice),

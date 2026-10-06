@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import { useApp } from '../contexts/AppContext';
 import { periodQuery, date } from '../utils/format';
 import { exportPDF, exportExcel, type Report } from '../utils/export';
+import { Documents } from '../components/Documents';
 const kinds: Record<string, string> = {
   stock: 'Estoque atual',
   low: 'Abaixo do estoque mínimo',
@@ -41,8 +42,8 @@ export function Reports() {
       <div className="page-heading">
         <div>
           <span className="eyebrow">INFORMAÇÃO PARA DECIDIR</span>
-          <h1>Relatórios</h1>
-          <p>Consulte, exporte e compartilhe os dados do núcleo.</p>
+          <h1>Relatórios e documentos</h1>
+          <p>Consulte os dados do núcleo e emita documentos administrativos.</p>
         </div>
         <FileChartColumn className="large-icon" />
       </div>
@@ -162,6 +163,7 @@ export function Reports() {
           <p>Defina o período e clique em gerar para visualizar os dados.</p>
         </section>
       )}
+      <Documents />
     </>
   );
 }

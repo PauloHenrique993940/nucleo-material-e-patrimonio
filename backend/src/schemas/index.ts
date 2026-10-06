@@ -20,6 +20,12 @@ export const materialSchema = z
   .object({
     code: z.string().trim().min(1).max(60),
     barcode: z.string().trim().max(100).nullable().optional(),
+    expiryDate: z
+      .string()
+      .date('Data de validade inválida.')
+      .transform((value) => new Date(value + 'T00:00:00Z'))
+      .nullable()
+      .optional(),
     name: z.string().trim().min(2).max(200),
     description: text,
     categoryId: id,
