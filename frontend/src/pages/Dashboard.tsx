@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useDashboard } from '../hooks/useDashboard';
 import { Link } from 'react-router-dom';
 import {
   Package,
@@ -25,14 +25,9 @@ import {
   LineChart,
   Line,
 } from 'recharts';
-import { api } from '../services/api';
 import { currency, date } from '../utils/format';
 export function Dashboard() {
-  const query = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: () => api('/dashboard'),
-    refetchInterval: 30000,
-  });
+  const query = useDashboard();
   if (query.isPending) return <p role="status">Carregando visão geral…</p>;
   if (query.isError)
     return (

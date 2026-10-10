@@ -8,6 +8,7 @@ import {
   History,
   ArrowLeftRight,
   Barcode,
+  QrCode,
   Trash2,
   ArrowUpDown,
 } from 'lucide-react';
@@ -20,6 +21,7 @@ import { EntityForm } from '../components/EntityForm';
 import { currency, date, status, roles, assetStatuses } from '../utils/format';
 import type { Row } from '../types';
 import { expiryInfo } from '../utils/expiry';
+import { MaterialQrLabel } from '../components/MaterialQrLabel';
 function BarcodeLabel({ row }: { row: Row }) {
   const ref = useRef<SVGSVGElement>(null);
   const [error, setError] = useState('');
@@ -69,6 +71,7 @@ export function Entities({ kind }: { kind: string }) {
     [detail, setDetail] = useState<Row | null>(null),
     [transfer, setTransfer] = useState<Row | null>(null),
     [barcode, setBarcode] = useState<Row | null>(null),
+    [qr, setQr] = useState<Row | null>(null),
     [remove, setRemove] = useState<Row | null>(null),
     [removeMode, setRemoveMode] = useState('preserve'),
     [removeConfirmation, setRemoveConfirmation] = useState(''),
@@ -312,6 +315,15 @@ export function Entities({ kind }: { kind: string }) {
                           )}
                           {kind === 'materials' && (
                             <button
+                              aria-label={`QR Code de ${r.name}`}
+                              title="Gerar QR Code"
+                              onClick={() => setQr(r)}
+                            >
+                              <QrCode size={17} />
+                            </button>
+                          )}
+                          {kind === 'materials' && (
+                            <button
                               className="action-barcode"
                               aria-label={`Código de barras de ${r.name}`}
                               onClick={() => setBarcode(r)}
@@ -468,6 +480,11 @@ export function Entities({ kind }: { kind: string }) {
       {barcode && (
         <Modal title="Etiqueta do material" onClose={() => setBarcode(null)}>
           <BarcodeLabel row={barcode} />
+        </Modal>
+      )}
+      {qr && (
+        <Modal title="QR Code do material" onClose={() => setQr(null)}>
+          <MaterialQrLabel row={query.data?.find((m) => m.id === qr.id) || qr} />
         </Modal>
       )}
       {remove && kind === 'users' && (

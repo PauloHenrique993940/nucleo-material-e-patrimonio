@@ -27,6 +27,7 @@ import { useApp } from '../contexts/AppContext';
 import { api } from '../services/api';
 import { roles } from '../utils/format';
 import { useDebounce } from '../hooks/useDebounce';
+import { useDashboard } from '../hooks/useDashboard';
 const links = [
   ['/', 'Dashboard', LayoutDashboard],
   ['/materials', 'Materiais', Package],
@@ -74,11 +75,7 @@ export function Layout() {
     queryFn: () => api('/search?q=' + encodeURIComponent(debounced)),
     enabled: debounced.length >= 2,
   });
-  const dashboard = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: () => api('/dashboard'),
-    refetchInterval: 30000,
-  });
+  const dashboard = useDashboard();
   const allowed = links.filter(
     ([path]) =>
       !(['/users', '/audit'].includes(path) && user?.role !== 'ADMIN') &&

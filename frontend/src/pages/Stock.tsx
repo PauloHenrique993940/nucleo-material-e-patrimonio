@@ -8,14 +8,17 @@ import { api } from '../services/api';
 import { useApp } from '../contexts/AppContext';
 import type { Field, Row } from '../types';
 import { currency } from '../utils/format';
+import { findScannedMaterial } from '../utils/materialQr';
+import { useSearchParams } from 'react-router-dom';
 export function Stock({ type }: { type: 'IN' | 'OUT' }) {
   const { toast } = useApp();
   const cache = useQueryClient();
+  const [params] = useSearchParams();
   const [pending, setPending] = useState<any>(null),
     [busy, setBusy] = useState(false),
     [barcode, setBarcode] = useState(''),
     [selected, setSelected] = useState(''),
-    [scanner, setScanner] = useState(false),
+    [scanner, setScanner] = useState(type === 'OUT' && params.get('qr') === '1'),
     [revision, setRevision] = useState(0);
   const query = useQuery<Record<string, Row[]>>({
     queryKey: ['lookups'],
@@ -28,14 +31,14 @@ export function Stock({ type }: { type: 'IN' | 'OUT' }) {
   });
   const read = useCallback(
     (code: string) => {
-      const material = query.data?.materials.find((m) => m.barcode === code || m.code === code);
+      const material = findScannedMaterial(code, query.data?.materials || []);
       if (material) {
         setSelected(material.id);
-        setBarcode(code);
+        setBarcode(material.code);
         setScanner(false);
         setRevision((v) => v + 1);
         toast(`Material selecionado: ${material.name}`);
-      } else toast('Código não encontrado.', true);
+      } else toast('Material não encontrado ou inativo. Aponte para outra etiqueta.', true);
     },
     [query.data, toast],
   );
@@ -120,7 +123,7 @@ export function Stock({ type }: { type: 'IN' | 'OUT' }) {
             <>
               <div className="barcode-input">
                 <label>
-                  Código do material / código de barras
+                  Código do material / código de barras / QR Code
                   <input
                     value={barcode}
                     onChange={(e) => setBarcode(e.target.value)}
@@ -135,9 +138,19 @@ export function Stock({ type }: { type: 'IN' | 'OUT' }) {
                 </label>
                 <button onClick={() => read(barcode)}>Localizar</button>
                 <button aria-label="Ler pela câmera" onClick={() => setScanner(true)}>
-                  <ScanLine size={20} />
+                  <ScanLine size={20} /> {type === 'OUT' ? 'Saída por QR Code' : 'Ler QR Code'}
                 </button>
               </div>
+              {selected && (
+                <div className="success-box">
+                  <strong>{query.data?.materials.find((m) => m.id === selected)?.name}</strong>
+                  <p>{query.data?.materials.find((m) => m.id === selected)?.description}</p>
+                  <p>
+                    Saldo atual: {query.data?.materials.find((m) => m.id === selected)?.quantity}{' '}
+                    {query.data?.materials.find((m) => m.id === selected)?.unit}
+                  </p>
+                </div>
+              )}
               <EntityForm
                 key={revision}
                 fields={fields}
@@ -172,7 +185,9 @@ export function Stock({ type }: { type: 'IN' | 'OUT' }) {
           </div>
         </aside>
       </div>
-      {scanner && <Scanner onRead={read} onClose={() => setScanner(false)} />}{' '}
+      {scanner && !query.isPending && !query.isError && (
+        <Scanner onRead={read} onClose={() => setScanner(false)} />
+      )}{' '}
       {pending && (
         <Modal title="Confirmar movimentação" onClose={() => !busy && setPending(null)}>
           <dl className="detail-grid">
@@ -184,6 +199,12 @@ export function Stock({ type }: { type: 'IN' | 'OUT' }) {
               <dt>Quantidade</dt>
               <dd>{pending.quantity}</dd>
             </div>
+            {type === 'OUT' && (
+              <div>
+                <dt>Setor solicitante</dt>
+                <dd>{query.data?.departments.find((d) => d.id === pending.departmentId)?.name}</dd>
+              </div>
+            )}
             {type === 'IN' && (
               <div>
                 <dt>Valor total</dt>

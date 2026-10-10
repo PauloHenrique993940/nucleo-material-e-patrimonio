@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
+import { BrowserMultiFormatReader, type IScannerControls } from '@zxing/browser';
 import { Modal } from './Modal';
 export function Scanner({
   onRead,
@@ -8,55 +9,50 @@ export function Scanner({
   onClose: () => void;
 }) {
   const video = useRef<HTMLVideoElement>(null);
+  const read = useRef(onRead);
+  read.current = onRead;
   const [error, setError] = useState('');
   useEffect(() => {
-    let stream: MediaStream | undefined;
-    let timer: ReturnType<typeof setTimeout>;
+    let controls: IScannerControls | undefined;
     let stopped = false;
+    let lastCode = '';
+    let lastRead = 0;
     const start = async () => {
       try {
-        const Detector = (window as any).BarcodeDetector;
-        if (!Detector)
+        if (!navigator.mediaDevices?.getUserMedia)
           throw new Error(
-            'Este navegador não oferece leitura por câmera. Use um leitor USB ou digite o código no formulário.',
+            'Para usar a câmera do celular, abra o sistema por HTTPS e permita o acesso à câmera.',
           );
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' },
-        });
-        if (stopped) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
-        video.current!.srcObject = stream;
-        await video.current!.play();
-        const detector = new Detector({ formats: ['code_128', 'ean_13', 'ean_8', 'qr_code'] });
-        const scan = async () => {
-          if (stopped) return;
-          try {
-            const codes = await detector.detect(video.current);
-            if (codes.length) {
-              onRead(codes[0].rawValue);
-              return;
-            }
-          } catch {
-            /* retry frame */
-          }
-          timer = setTimeout(scan, 250);
-        };
-        await scan();
+        controls = await new BrowserMultiFormatReader().decodeFromConstraints(
+          { video: { facingMode: { ideal: 'environment' } }, audio: false },
+          video.current!,
+          (result) => {
+            if (stopped || !result) return;
+            const code = result.getText();
+            if (code === lastCode && Date.now() - lastRead < 3000) return;
+            lastCode = code;
+            lastRead = Date.now();
+            read.current(code);
+          },
+        );
+        if (stopped) controls.stop();
       } catch (e) {
-        setError((e as Error).message);
+        if (!stopped)
+          setError(
+            (e as Error).name === 'NotAllowedError'
+              ? 'Permita o acesso à câmera nas configurações do navegador e tente novamente.'
+              : (e as Error).message,
+          );
       }
     };
     void start();
     return () => {
       stopped = true;
-      clearTimeout(timer);
-      stream?.getTracks().forEach((t) => t.stop());
+      controls?.stop();
     };
-  }, [onRead]);
+  }, []);
   return (
-    <Modal title="Ler código de barras" onClose={onClose}>
+    <Modal title="Ler QR Code ou código de barras" onClose={onClose}>
       <p>Aponte a câmera para a etiqueta do material.</p>
       {error ? (
         <p className="error-box" role="alert">
