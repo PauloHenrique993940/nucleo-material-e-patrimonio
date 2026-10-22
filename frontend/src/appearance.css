@@ -22,6 +22,35 @@ body textarea {
 .appearance-settings {
   margin-top: 20px;
 }
+.app-shell,
+.app-modal,
+.toast {
+  zoom: var(--custom-scale, 1);
+}
+.app-shell :where(p, span, small, label, td, input, select, textarea, button, a),
+.app-modal :where(p, span, small, label, td, input, select, textarea, button) {
+  font-weight: var(--custom-weight, 400);
+  letter-spacing: var(--custom-spacing, normal);
+}
+.app-shell table th {
+  background: var(--custom-table-head, var(--soft));
+}
+:root[data-striped='true'] .app-shell table tbody tr:nth-child(even) {
+  background: var(--custom-table-stripe, var(--bg));
+}
+:root[data-density='compact'] .app-shell table td {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+:root[data-density='comfortable'] .app-shell table td {
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+.appearance-grid > label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .appearance-settings > select {
   display: block;
   margin: 8px 0 20px;
@@ -62,4 +91,11 @@ body textarea {
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 8px;
+}
+.app-shell .document-page,
+.app-shell .document-page *,
+.app-modal .document-page,
+.app-modal .document-page * {
+  text-transform: none;
+  letter-spacing: normal;
 }

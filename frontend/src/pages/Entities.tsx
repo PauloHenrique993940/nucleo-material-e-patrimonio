@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -208,6 +208,14 @@ export function Entities({ kind }: { kind: string }) {
           <h1>{config.title}</h1>
           <p>{config.description}</p>
         </div>
+        {kind === 'materials' && user?.role !== 'OPERATOR' && (
+          <Link className="button" to="/reports">
+            Exportar estoque em Excel
+          </Link>
+        )}
+        <Link className="button" to="/settings">
+          Personalizar aparência
+        </Link>
         {kind === 'materials' && (
           <button onClick={() => setQrEditor(true)}>
             <QrCode size={18} /> Gerar todos os QR Codes / editor

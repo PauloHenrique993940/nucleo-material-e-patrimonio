@@ -5,6 +5,7 @@ import { useApp } from '../contexts/AppContext';
 import { periodQuery, date } from '../utils/format';
 import { exportPDF, exportExcel, type Report } from '../utils/export';
 import { Documents } from '../components/Documents';
+import { StockExcelExport } from '../components/StockExcelExport';
 const kinds: Record<string, string> = {
   stock: 'Estoque atual',
   low: 'Abaixo do estoque mínimo',
@@ -163,6 +164,7 @@ export function Reports() {
           <p>Defina o período e clique em gerar para visualizar os dados.</p>
         </section>
       )}
+      <StockExcelExport />
       <Documents />
     </>
   );

@@ -108,6 +108,11 @@ export function DocumentEditor({ initialHTML, title }: { initialHTML: string; ti
     ['bold', 'Negrito'],
     ['italic', 'Itálico'],
     ['underline', 'Sublinhar'],
+    ['strikeThrough', 'Tachado'],
+    ['justifyFull', 'Justificar'],
+    ['indent', 'Aumentar recuo'],
+    ['outdent', 'Diminuir recuo'],
+    ['removeFormat', 'Limpar formatação'],
     ['justifyLeft', 'Alinhar à esquerda'],
     ['justifyCenter', 'Centralizar'],
     ['justifyRight', 'Alinhar à direita'],
@@ -186,6 +191,38 @@ export function DocumentEditor({ initialHTML, title }: { initialHTML: string; ti
               onChange={(e) => command('foreColor', e.target.value)}
             />
           </label>
+          <label>
+            Marca-texto
+            <input
+              type="color"
+              aria-label="Cor do marca-texto"
+              defaultValue="#fff59d"
+              onChange={(e) => command('hiliteColor', e.target.value)}
+            />
+          </label>
+          {(['upper', 'lower'] as const).map((mode) => (
+            <button
+              type="button"
+              key={mode}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                restore();
+                const text = window.getSelection()?.toString();
+                if (!text) {
+                  toast('Selecione o texto que deseja converter.', true);
+                  return;
+                }
+                command(
+                  'insertText',
+                  mode === 'upper'
+                    ? text.toLocaleUpperCase('pt-BR')
+                    : text.toLocaleLowerCase('pt-BR'),
+                );
+              }}
+            >
+              {mode === 'upper' ? 'MAIÚSCULAS' : 'minúsculas'}
+            </button>
+          ))}
           {tools.map(([action, label]) => (
             <button
               type="button"
