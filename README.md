@@ -68,6 +68,10 @@ Administrador: acesso completo. Gestor: estoque, movimentações, patrimônio e 
 - Validade opcional dos materiais, com identificação de vencidos e dos que vencem em até 30 dias.
 - Modelos PDF de requisição, entrega, responsabilidade, transferência e inventário.
 - Exclusão de outros usuários pelo administrador, com revogação do acesso e preservação do histórico.
+- Central de estoque com contagem física, divergências e aviso de saldo alterado após a contagem. Rascunhos são locais ao navegador e separados por usuário; não alteram o saldo nem substituem um inventário homologado.
+- Planejamento de reposição até o máximo cadastrado (ou mínimo + 1), com quantidade e custo estimados, filtros por categoria, fornecedor/local na busca e consulta de validades.
+- Exportação Excel da central por consulta ou arquivo com três abas: inventário, reposição e validades. Inclui todos os registros filtrados, além da página visível.
+- Personalização de fonte, maiúsculas, tamanho, peso, espaçamento, cores, densidade e linhas alternadas; editor de documentos com formatação e exportação; Excel com múltiplos relatórios e abas por categoria.
 
 ## Gráficos e indicadores
 

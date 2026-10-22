@@ -33,11 +33,14 @@
         { "key": "Referrer-Policy", "value": "no-referrer" },
         { "key": "Strict-Transport-Security", "value": "max-age=31536000" },
         { "key": "Permissions-Policy", "value": "camera=(self), microphone=(), geolocation=()" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests" }
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests"
+        }
       ]
     },
     {
-      "source": "/:section(api|reset-password|materials|categories|suppliers|departments|assets|users|entries|exits|movements|reports|audit|settings)/:path*",
+      "source": "/:section(api|reset-password|materials|categories|suppliers|departments|assets|users|entries|exits|movements|reports|audit|settings|stock-center)/:path*",
       "headers": [
         {
           "key": "X-Robots-Tag",

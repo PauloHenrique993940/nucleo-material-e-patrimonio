@@ -25,6 +25,7 @@ import {
   Moon,
   X,
   Cloud,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../services/api';
@@ -34,6 +35,7 @@ import { useStockAlerts } from '../hooks/useStockAlerts';
 const links = [
   ['/', 'Dashboard', LayoutDashboard],
   ['/materials', 'Materiais', Package],
+  ['/stock-center', 'Central de estoque', ClipboardCheck],
   ['/entries', 'Entrada', ArrowDownToLine],
   ['/exits', 'Saída', ArrowUpFromLine],
   ['/movements', 'Movimentações', ArrowLeftRight],

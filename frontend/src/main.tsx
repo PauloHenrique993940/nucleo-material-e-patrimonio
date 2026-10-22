@@ -8,6 +8,9 @@ import { Login } from './pages/Login';
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
 const Entities = lazy(() => import('./pages/Entities').then((m) => ({ default: m.Entities })));
 const Stock = lazy(() => import('./pages/Stock').then((m) => ({ default: m.Stock })));
+const StockCenter = lazy(() =>
+  import('./pages/StockCenter').then((m) => ({ default: m.StockCenter })),
+);
 const Movements = lazy(() => import('./pages/Movements').then((m) => ({ default: m.Movements })));
 const Reports = lazy(() => import('./pages/Reports').then((m) => ({ default: m.Reports })));
 const Audit = lazy(() => import('./pages/Audit').then((m) => ({ default: m.Audit })));
@@ -72,6 +75,7 @@ function App() {
             element={user?.role === 'VIEWER' ? <Navigate to="/" /> : <Stock key="OUT" type="OUT" />}
           />
           <Route path="movements" element={<Movements />} />
+          <Route path="stock-center" element={<StockCenter />} />
           <Route
             path="reports"
             element={user?.role === 'OPERATOR' ? <Navigate to="/" /> : <Reports />}
