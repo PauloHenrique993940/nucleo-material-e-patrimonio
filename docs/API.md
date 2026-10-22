@@ -34,7 +34,7 @@ IDs são UUIDs. Valores monetários são números não negativos na entrada e De
 
 Situações patrimoniais: `IN_USE`, `AVAILABLE`, `MAINTENANCE`, `TRANSFERRED`, `DISPOSED`. Perfis: `ADMIN`, `MANAGER`, `OPERATOR`, `VIEWER`.
 
-Listagem de materiais aceita `q`, `categoryId`, `supplierId`, `active=true|false`, `stock=Normal|Baixo|Crítico|Sem estoque`, `sort=name|code|quantity|unitPrice|createdAt`, `order=asc|desc`. `page` e `pageSize` (até 100) retornam `{ rows, total, page, pageSize }`; sem `page`, retorna uma lista. A interface pagina e ordena os dados carregados no cliente.
+Listagem de materiais aceita `q`, `categoryId`, `supplierId`, `active=true|false`, `stock=Normal|Baixo|Crítico|Sem estoque`, `expiry=expired|soon|valid|missing`, `sort=name|code|quantity|unitPrice|createdAt|category.name|unit|stockStatus|expiryDate|active`, `order=asc|desc`. `page` e `pageSize` (até 100) retornam `{ rows, total, page, pageSize }`; sem `page`, retorna uma lista. A interface solicita 15 materiais por página; filtros, ordenação e paginação são executados no PostgreSQL. A validade considera o dia em America/Sao_Paulo: vencidos antes de hoje, próximos entre hoje e 30 dias inclusive, válidos acima de 30 dias e sem validade quando nula. A busca paginada também encontra descrição, localização, prateleira, observações, unidade, categoria e fornecedor.
 
 Históricos: `GET /suppliers/:id/history`, `/departments/:id/history`, `/assets/:id/history`.
 

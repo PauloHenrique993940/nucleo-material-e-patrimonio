@@ -1,339 +1,396 @@
-.institutional-login.login-page {
-  --surface: #ffffff;
-  --text: #2d3645;
-  --muted: #526078;
-  --border: #cbd2de;
-  --input: #ffffff;
-  --primary: #174b70;
-  --primary-hover: #123e5d;
-  --focus: #506faa;
-  --accent: #e0b53b;
-  --soft: #edf3f7;
-  display: flex;
-  flex-direction: column;
+.logistics-login.login-page {
+  --surface: #07264f;
+  --text: #fff;
+  --muted: #d2e3f7;
+  --border: #ffffff40;
+  --input: #ffffff0d;
+  --primary: #2875f4;
+  --primary-hover: #185bed;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 480px);
+  align-items: center;
+  gap: 48px;
   min-height: 100vh;
-  background: #f3f5f7;
-  color: var(--text);
-  color-scheme: light;
+  min-height: 100svh;
+  padding: 48px clamp(28px, 6vw, 100px);
+  background: #07264f url('/images/login-warehouse.png') center / cover no-repeat;
+  color: white;
+  color-scheme: dark;
   font-family: 'Segoe UI', Arial, sans-serif;
 }
-.portal-utility {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 9px max(24px, calc((100vw - 1080px) / 2));
-  background: #edf1f3;
-  border-bottom: 1px solid #d7dfe4;
-  color: #526472;
-  font-size: 13px;
+.logistics-login::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, #07264f66, #07264f15 48%, #03172f55);
+  pointer-events: none;
 }
-.portal-masthead {
+.logistics-brand {
+  align-self: start;
+  min-width: 0;
+}
+.logistics-brand-content {
+  color: white;
+  padding: 10px 0;
+}
+.logistics-logo {
   display: flex;
   align-items: center;
-  gap: 18px;
-  width: min(1080px, calc(100% - 48px));
-  margin: 0 auto;
-  padding: 30px 0 27px;
+  gap: 16px;
 }
-.portal-emblem {
-  width: 58px;
-  height: 62px;
+.logistics-logo .logistics-brand-logo {
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+}
+.logistics-logo strong {
+  display: block;
+  font-size: clamp(24px, 2.4vw, 34px);
+  font-weight: 750;
+  letter-spacing: -1px;
+  line-height: 1.15;
+}
+.logistics-logo span {
+  display: block;
+  margin-top: 9px;
+  color: #a6ddff;
+  font-size: 13px;
+  letter-spacing: 4px;
+}
+.logistics-benefits {
+  display: flex;
+  gap: 16px;
+  margin-top: 28px;
+  max-width: 470px;
+}
+.logistics-benefits > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+.logistics-benefits > div + div {
+  padding-left: 16px;
+  border-left: 1px solid #ffffff35;
+}
+.logistics-benefits svg {
+  width: 28px;
+  height: 32px;
+  color: #7acfff;
+  stroke-width: 1.5;
+  flex-shrink: 0;
+}
+.logistics-benefits span {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #e0efff;
+}
+.logistics-access {
   display: grid;
   place-items: center;
-  flex-shrink: 0;
-  background: var(--primary);
-  color: #fff;
-  border: 3px double #c8d1e2;
-  border-radius: 3px;
+  min-width: 0;
 }
-.portal-kicker {
-  font-size: 12px;
-  letter-spacing: 1.5px;
-  color: #596c91;
-  font-weight: 700;
-}
-.portal-masthead h1 {
-  margin: 7px 0;
-  font-size: 25px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  color: #2f4168;
-}
-.portal-masthead p {
-  margin: 0;
-  font-size: 14px;
-  color: #647086;
-}
-.portal-module-strip {
-  text-align: center;
-  background: var(--primary);
-  color: #fff;
-  padding: 11px 20px;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 1.6px;
-  border-bottom: 4px solid var(--accent);
-}
-.portal-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  width: min(1080px, calc(100% - 48px));
-  margin: 17px auto 0;
-  font-size: 13px;
-  color: #727a88;
-}
-.portal-breadcrumb strong {
-  font-weight: 500;
-  color: #3e527a;
-}
-.portal-content {
-  width: min(780px, calc(100% - 48px));
-  margin: 42px auto 60px;
-}
-.institutional-login .login-panel {
-  display: block;
-  place-items: normal;
-  padding: 0;
-  min-height: auto;
-  background: #f9fafc;
-  border: 1px solid #b6c1d4;
-  border-radius: 4px;
-  overflow: hidden;
-  box-shadow: 0 3px 8px #23345e08;
-}
-.portal-section-title {
-  display: flex;
+.logistics-login .logistics-card {
   width: 100%;
-  justify-content: center;
-  align-items: center;
-  gap: 9px;
-  background: #415785;
-  border-bottom: 3px solid #d0d9e9;
-  padding: 12px 18px;
+  max-width: 480px;
+  padding: 42px 42px 28px;
+  border: 1px solid #ffffff45;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #07264f88, #07264f55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    0 24px 70px #00142e55,
+    inset 0 1px 0 #ffffff20;
+}
+.logistics-card h1 {
+  margin: 0 0 8px;
+  font-size: 32px;
+  font-weight: 750;
+  letter-spacing: -1px;
+  line-height: 1.25;
   color: white;
 }
-.portal-section-title h2 {
-  font-size: 14px;
-  margin: 0;
-  color: white;
-  font-weight: 700;
-  letter-spacing: 1.3px;
-}
-.institutional-login .login-form {
-  max-width: none;
-  padding: 26px 40px 0;
-}
-.institutional-login .portal-form-intro {
-  text-align: center;
-  font-size: 14px;
-  margin: 0 0 26px;
-  color: #566174;
-}
-.institutional-login .login-form form {
-  gap: 17px;
-  max-width: 520px;
-  margin: auto;
-}
-.institutional-login .login-form label {
-  display: grid;
-  grid-template-columns: 128px minmax(0, 1fr);
-  align-items: center;
-  gap: 8px 14px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #334361;
-}
-.institutional-login .login-form input {
-  height: 39px;
-  min-height: 39px;
-  border-radius: 2px;
-  border-color: var(--border);
-  border-bottom-color: #a0a5ae;
-  padding: 9px 11px;
+.logistics-card > p {
+  margin: 0 0 30px;
+  color: #d2e3f7;
   font-size: 15px;
-  box-shadow: inset 0 1px 2px #273b5c07;
-}
-.institutional-login .login-form input:focus {
-  border-color: var(--focus);
-  box-shadow: inset 0 -1px var(--focus);
-}
-.institutional-login .password-field button {
-  top: 1px;
-  right: 2px;
-  padding: 9px;
-  color: #737780;
-}
-.institutional-login .field-error {
-  grid-column: 2;
-  font-size: 13px;
-}
-.institutional-login .login-form form .primary {
-  width: auto;
-  min-height: 40px;
-  align-self: center;
-  justify-content: center;
-  gap: 18px;
-  margin: 7px 0 0;
-  border-radius: 3px;
-  padding: 10px 23px;
-  font-size: 14px;
-  background: #3d5585;
-  border-color: #2f4570;
-  color: #fff;
-}
-.institutional-login .login-form form .primary:hover {
-  background: #2f4570;
-}
-.institutional-login .login-form .text-button,
-.institutional-login .login-form > a {
-  display: block;
-  width: fit-content;
-  margin: 15px auto 24px;
-  padding: 0;
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--primary);
-  text-decoration: underline;
-}
-.portal-session-note {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  margin: 0 -40px;
-  padding: 13px 22px;
-  background: var(--soft);
-  border-top: 1px solid #d3dbe8;
-  color: #53627a;
-  font-size: 12px;
   line-height: 1.5;
 }
-.portal-session-note svg {
-  flex-shrink: 0;
+.logistics-login .logistics-card form {
+  gap: 20px;
 }
-.portal-guidance {
-  background: var(--soft);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--focus);
-  margin-top: 22px;
-  padding: 18px 23px;
-  border-radius: 3px;
+.logistics-login .logistics-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
 }
-.portal-guidance-title {
+.logistics-login .logistics-card input:not([type='checkbox']) {
+  width: 100%;
+  height: 50px;
+  min-height: 50px;
+  border: 1px solid #ffffff45;
+  border-radius: 10px;
+  background: #ffffff0d;
+  color: #fff;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 400;
+  box-shadow: none;
+  transition:
+    background 150ms,
+    border-color 150ms;
+}
+.logistics-card input::placeholder {
+  color: #c2d4ea;
+  opacity: 1;
+}
+.logistics-card .password-field input::placeholder {
+  letter-spacing: 2px;
+}
+.logistics-input {
+  position: relative;
+}
+.logistics-input > svg {
+  position: absolute;
+  top: 15px;
+  left: 16px;
+  color: #c2d4ea;
+  pointer-events: none;
+}
+.logistics-login .logistics-input input {
+  padding-left: 48px !important;
+}
+.logistics-login .password-field input {
+  padding-right: 48px !important;
+}
+.logistics-login .password-field button {
+  top: 5px;
+  right: 5px;
+  padding: 10px;
+  color: #d2e3f7;
+}
+.logistics-card input:focus-visible {
+  outline: 3px solid #70baff55;
+  border-color: #8bcaff !important;
+  background: #ffffff16 !important;
+}
+.logistics-options {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #405679;
+  justify-content: space-between;
+  gap: 12px;
 }
-.portal-guidance-title h2 {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 700;
-}
-.portal-guidance ul {
-  padding-left: 21px;
-  margin: 13px 0;
-  list-style: disc;
+.logistics-login .logistics-options .logistics-remember {
+  flex-direction: row;
+  align-items: center;
+  gap: 9px;
   font-size: 13px;
-  line-height: 1.9;
-  color: #5a6270;
+  font-weight: 400;
+  cursor: pointer;
 }
-.portal-guidance p {
-  font-size: 13px;
-  color: #646b74;
+.logistics-remember input {
+  width: 18px;
+  height: 18px;
   margin: 0;
-  line-height: 1.7;
+  accent-color: #2875f4;
+  cursor: pointer;
 }
-.portal-footer {
-  margin-top: auto;
+.logistics-login .logistics-card .text-button {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #a8dcff;
+  font-size: 13px;
+}
+.logistics-login .logistics-card .text-button:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+.logistics-login .logistics-card form .primary {
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px 20px;
-  border-top: 3px solid #becbe3;
-  background: #f7f9fc;
-  padding: 19px 24px;
+  gap: 12px;
+  width: 100%;
+  min-height: 50px;
+  margin: 4px 0 0;
+  border: 1px solid #65a5ff66;
+  border-radius: 10px;
+  background: linear-gradient(110deg, #2875f4, #185bed);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 650;
+  box-shadow: 0 8px 24px #001b4933;
+}
+.logistics-login .logistics-card form .primary:hover {
+  background: #185bed;
+}
+.logistics-login .logistics-card form .primary:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.logistics-login .logistics-card .logistics-back {
+  display: block;
+  margin: 18px auto 0;
+  color: #a8dcff;
+  text-align: center;
+}
+.logistics-security {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+  padding-top: 23px;
+  margin-top: 28px;
+  border-top: 1px solid #ffffff25;
+  color: #d2e3f7;
   font-size: 12px;
-  color: #606c80;
 }
-.portal-footer strong {
-  font-weight: 600;
-  color: #405477;
+.logistics-security svg {
+  flex-shrink: 0;
 }
-@media (max-width: 600px) {
-  .portal-utility {
-    padding: 9px 18px;
-    font-size: 12px;
+.logistics-card button:focus-visible,
+.logistics-card a:focus-visible {
+  outline: 3px solid #8bcaff;
+  outline-offset: 4px;
+}
+.logistics-card .field-error {
+  color: #ffcdcd;
+}
+.logistics-card .error-box {
+  background: #581c2ce6;
+  color: #ffe1e1;
+  border: 1px solid #fca5a580;
+}
+.logistics-card .success-box {
+  background: #113e35e6;
+  color: #d1fae5;
+  border: 1px solid #6ee7b780;
+}
+@media (max-width: 1050px) {
+  .logistics-login.login-page {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
+    gap: 24px;
+    padding: 36px 28px;
   }
-  .portal-utility > span:last-child {
-    display: none;
-  }
-  .portal-masthead {
-    width: calc(100% - 36px);
+  .logistics-logo {
     gap: 12px;
-    padding: 24px 0;
   }
-  .portal-emblem {
-    width: 46px;
-    height: 51px;
+  .logistics-logo .logistics-brand-logo {
+    width: 76px;
+    height: 76px;
   }
-  .portal-kicker {
-    font-size: 12px;
-    letter-spacing: 0.9px;
+  .logistics-logo strong {
+    font-size: 28px;
   }
-  .portal-masthead h1 {
-    font-size: 18px;
-    line-height: 1.25;
-    margin: 6px 0;
+  .logistics-logo span {
+    font-size: 11px;
+    letter-spacing: 2px;
   }
-  .portal-masthead p {
-    font-size: 12px;
+  .logistics-benefits {
+    flex-wrap: wrap;
+    gap: 16px;
   }
-  .portal-module-strip {
-    font-size: 12px;
-    letter-spacing: 0.8px;
-    padding: 11px 18px;
+  .logistics-benefits > div {
+    flex: 0 0 auto;
   }
-  .portal-breadcrumb {
-    width: calc(100% - 36px);
-    font-size: 12px;
+  .logistics-benefits > div + div {
+    border: none;
+    padding-left: 0;
   }
-  .portal-content {
-    width: calc(100% - 36px);
-    margin: 27px auto 36px;
+  .logistics-login .logistics-card {
+    padding: 36px 30px 26px;
   }
-  .institutional-login .login-form {
-    padding: 22px 20px 0;
+}
+@media (max-width: 760px) {
+  .logistics-login.login-page {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: 28px;
+    padding: 28px 20px;
+    background-position: 58% center;
   }
-  .institutional-login .login-form label {
-    display: flex;
-    align-items: stretch;
-    gap: 8px;
-    font-size: 14px;
+  .logistics-login::before {
+    background: #041a3650;
   }
-  .institutional-login .login-form input {
-    min-height: 44px;
-  }
-  .institutional-login .password-field button {
-    top: 4px;
-  }
-  .institutional-login .login-form form .primary {
+  .logistics-brand {
     width: 100%;
-    min-height: 44px;
+    max-width: 440px;
+    margin: 0 auto;
   }
-  .portal-session-note {
-    margin: 0 -20px;
-    padding: 13px 17px;
-    align-items: flex-start;
+  .logistics-brand-content {
+    padding: 0;
   }
-  .portal-guidance {
-    padding: 16px;
+  .logistics-logo {
+    justify-content: center;
   }
-  .portal-footer {
-    flex-direction: column;
-    gap: 7px;
-    text-align: center;
+  .logistics-logo strong {
+    font-size: 28px;
   }
+  .logistics-benefits {
+    justify-content: center;
+    margin-top: 18px;
+    gap: 16px;
+  }
+  .logistics-benefits svg {
+    width: 24px;
+  }
+  .logistics-benefits span {
+    font-size: 11px;
+  }
+  .logistics-login .logistics-card {
+    max-width: 440px;
+    padding: 30px 26px 25px;
+  }
+  .logistics-card h1 {
+    font-size: 29px;
+  }
+  .logistics-card > p {
+    font-size: 14px;
+    margin-bottom: 26px;
+  }
+}
+@media (max-width: 360px) {
+  .logistics-login.login-page {
+    padding: 24px 14px;
+  }
+  .logistics-logo strong {
+    font-size: 25px;
+  }
+  .logistics-logo span {
+    letter-spacing: 1.5px;
+  }
+  .logistics-benefits {
+    gap: 10px;
+  }
+  .logistics-benefits > div {
+    gap: 6px;
+  }
+  .logistics-benefits svg {
+    width: 20px;
+  }
+  .logistics-login .logistics-card {
+    padding: 26px 18px;
+  }
+  .logistics-options {
+    gap: 6px;
+  }
+  .logistics-login .logistics-options .logistics-remember,
+  .logistics-login .logistics-card .text-button {
+    font-size: 12px;
+  }
+}
+
+.logistics-brand-logo {
+  display: block;
+  object-fit: contain;
+  background: transparent;
 }

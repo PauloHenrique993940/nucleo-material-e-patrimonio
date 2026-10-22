@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
+import rateLimit from 'express-rate-limit';
 import { db } from '../repositories/db.js';
 import { AppError } from '../utils/stock.js';
 import { passwordSchema, userSchema } from '../schemas/index.js';
@@ -12,8 +13,15 @@ administration.post('/auth/logout', async (req, res) => {
   });
   res.status(204).end();
 });
-administration.post('/auth/change-password', async (req, res) => {
-  const d = z.object({ currentPassword: z.string(), password: passwordSchema }).parse(req.body);
+administration.post('/auth/change-password', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  keyGenerator: (req) => req.session.id,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { message: 'Muitas tentativas de alteração de senha. Aguarde 15 minutos.' },
+}), async (req, res) => {
+  const d = z.object({ currentPassword: z.string().min(1).max(200), password: passwordSchema }).parse(req.body);
   const u = await db.user.findUniqueOrThrow({ where: { id: req.session.id } });
   if (!(await bcrypt.compare(d.currentPassword, u.passwordHash)))
     throw new AppError(400, 'Senha atual incorreta.');
@@ -118,3 +126,26 @@ administration.get('/assets/:id/history', async (req, res) =>
     }),
   ),
 );
+
+administration.delete('/audit', async (req, res) => {
+  if (req.session.role !== 'ADMIN')
+    throw new AppError(403, 'Apenas administradores podem limpar a auditoria.');
+  z.object({ confirmation: z.literal('LIMPAR AUDITORIA') }).parse(req.body);
+  const result = await db.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT set_config('app.purge_audit', 'true', true)`;
+    return tx.auditLog.deleteMany({});
+  });
+  res.json({ deleted: result.count });
+});
+administration.delete('/audit/:id', async (req, res) => {
+  if (req.session.role !== 'ADMIN')
+    throw new AppError(403, 'Apenas administradores podem excluir registros de auditoria.');
+  const id = z.string().uuid().parse(req.params.id);
+  z.object({ confirmation: z.literal('EXCLUIR') }).parse(req.body);
+  await db.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT set_config('app.purge_audit', 'true', true)`;
+    const result = await tx.auditLog.deleteMany({ where: { id } });
+    if (!result.count) throw new AppError(404, 'Registro de auditoria não encontrado.');
+  });
+  res.status(204).end();
+});

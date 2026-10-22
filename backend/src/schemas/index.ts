@@ -18,7 +18,7 @@ export const userSchema = z.object({
 });
 export const materialSchema = z
   .object({
-    code: z.string().trim().min(1).max(60),
+    code: z.string().trim().max(60).optional(),
     barcode: z.string().trim().max(100).nullable().optional(),
     expiryDate: z
       .string()
@@ -26,10 +26,10 @@ export const materialSchema = z
       .transform((value) => new Date(value + 'T00:00:00Z'))
       .nullable()
       .optional(),
-    name: z.string().trim().min(2).max(200),
+    name: z.string().trim().max(200).optional(),
     description: text,
-    categoryId: id,
-    unit: z.string().min(1).max(20).default('UN'),
+    categoryId: id.optional(),
+    unit: z.string().trim().max(20).default('UN'),
     minimum: z.number().int().min(0).max(2147483647).default(5),
     maximum: z.number().int().min(0).max(2147483647).default(1000),
     location: text,
@@ -42,6 +42,7 @@ export const materialSchema = z
   .refine((x) => x.maximum >= x.minimum, {
     message: 'Estoque máximo deve ser maior ou igual ao mínimo.',
   });
+export const initialBalanceSchema = z.number().int().min(0).max(2147483647).default(0);
 export const movementSchema = z
   .object({
     materialId: id,
@@ -53,11 +54,14 @@ export const movementSchema = z
     invoice: text,
     process: text,
     requestNumber: text,
-    receiver: z.string().trim().min(2),
+    receiver: text,
     deliverer: text,
     purpose: text,
     notes: text,
     unitPrice: z.number().min(0).max(999999999999.99).default(0),
+  })
+  .refine((x) => x.type === 'IN' || x.receiver.trim().length >= 2, {
+    message: 'Informe o responsável pela retirada.',
   })
   .refine((x) => x.type === 'IN' || !!x.departmentId, {
     message: 'Selecione o setor solicitante.',

@@ -21,6 +21,7 @@ import { EntityForm } from '../components/EntityForm';
 import { currency, date, status, roles, assetStatuses } from '../utils/format';
 import type { Row } from '../types';
 import { expiryInfo } from '../utils/expiry';
+import { QrLabelEditor } from '../components/QrLabelEditor';
 import { MaterialQrLabel } from '../components/MaterialQrLabel';
 function BarcodeLabel({ row }: { row: Row }) {
   const ref = useRef<SVGSVGElement>(null);
@@ -72,19 +73,39 @@ export function Entities({ kind }: { kind: string }) {
     [transfer, setTransfer] = useState<Row | null>(null),
     [barcode, setBarcode] = useState<Row | null>(null),
     [qr, setQr] = useState<Row | null>(null),
+    [qrEditor, setQrEditor] = useState(false),
+    [replacementId, setReplacementId] = useState(''),
     [remove, setRemove] = useState<Row | null>(null),
     [removeMode, setRemoveMode] = useState('preserve'),
     [removeConfirmation, setRemoveConfirmation] = useState(''),
     [removing, setRemoving] = useState(false);
   const writable = !!user && config.writers.includes(user.role);
-  const query = useQuery<Row[]>({ queryKey: [kind], queryFn: () => api('/' + kind) });
+  const serverPaging = kind === 'materials';
+  const materialParams = new URLSearchParams({
+    page: String(page),
+    pageSize: '15',
+    q,
+    sort,
+    order: desc ? 'desc' : 'asc',
+    ...(active ? { active } : {}),
+    ...(category ? { categoryId: category } : {}),
+    ...(stock ? { stock } : {}),
+    ...(expiry ? { expiry } : {}),
+  });
+  const query = useQuery<{ rows: Row[]; total: number }>({
+    queryKey: serverPaging ? [kind, materialParams.toString()] : [kind],
+    queryFn: async () =>
+      serverPaging
+        ? api('/materials?' + materialParams)
+        : api<Row[]>('/' + kind).then((rows) => ({ rows, total: rows.length })),
+  });
   const lookups = useQuery<Record<string, Row[]>>({
-    queryKey: ['lookups'],
+    queryKey: ['entity-lookups'],
     queryFn: async () => {
-      const [categories, suppliers, departments, materials] = await Promise.all(
-        ['categories', 'suppliers', 'departments', 'materials'].map((k) => api<Row[]>('/' + k)),
+      const [categories, suppliers, departments] = await Promise.all(
+        ['categories', 'suppliers', 'departments'].map((k) => api<Row[]>('/' + k)),
       );
-      return { categories, suppliers, departments, materials };
+      return { categories, suppliers, departments };
     },
   });
   const history = useQuery<Row[]>({
@@ -97,32 +118,39 @@ export function Entities({ kind }: { kind: string }) {
   }, [params]);
   useEffect(() => {
     setPage(1);
-  }, [q, active, category, stock, expiry, kind]);
+  }, [q, active, category, stock, expiry, kind, sort, desc]);
   const value = (r: Row, key: string): any => key.split('.').reduce((v, k) => v?.[k], r);
-  const filtered = (query.data || [])
-    .filter(
-      (r) =>
-        JSON.stringify(r).toLowerCase().includes(q.toLowerCase()) &&
-        (!active || String(r.active) === active) &&
-        (!category || r.categoryId === category) &&
-        (!stock || status(r.quantity, r.minimum) === stock) &&
-        (!expiry || expiryInfo(r.expiryDate).state === expiry),
-    )
-    .sort((a, b) => {
-      const av = value(a, sort),
-        bv = value(b, sort);
-      return (
-        (typeof av === 'number'
-          ? av - bv
-          : String(av || '').localeCompare(String(bv || ''), 'pt-BR')) * (desc ? -1 : 1)
-      );
-    });
-  const totalPages = Math.max(1, Math.ceil(filtered.length / 15));
-  const rows = filtered.slice((page - 1) * 15, page * 15);
+  const filtered = serverPaging
+    ? query.data?.rows || []
+    : (query.data?.rows || [])
+        .filter(
+          (r) =>
+            JSON.stringify(r).toLowerCase().includes(q.toLowerCase()) &&
+            (!active || String(r.active) === active) &&
+            (!category || r.categoryId === category) &&
+            (!stock || status(r.quantity, r.minimum) === stock) &&
+            (!expiry || expiryInfo(r.expiryDate).state === expiry),
+        )
+        .sort((a, b) => {
+          const av = value(a, sort),
+            bv = value(b, sort);
+          return (
+            (typeof av === 'number'
+              ? av - bv
+              : String(av || '').localeCompare(String(bv || ''), 'pt-BR')) * (desc ? -1 : 1)
+          );
+        });
+  const total = serverPaging ? query.data?.total || 0 : filtered.length;
+  const totalPages = Math.max(1, Math.ceil(total / 15));
+  const rows = serverPaging ? filtered : filtered.slice((page - 1) * 15, page * 15);
+  useEffect(() => {
+    if (query.data && page > totalPages) setPage(totalPages);
+  }, [query.data, page, totalPages]);
   const invalidate = async () => {
     await Promise.all([
       cache.invalidateQueries({ queryKey: [kind] }),
       cache.invalidateQueries({ queryKey: ['lookups'] }),
+      cache.invalidateQueries({ queryKey: ['entity-lookups'] }),
       cache.invalidateQueries({ queryKey: ['dashboard'] }),
     ]);
   };
@@ -180,6 +208,11 @@ export function Entities({ kind }: { kind: string }) {
           <h1>{config.title}</h1>
           <p>{config.description}</p>
         </div>
+        {kind === 'materials' && (
+          <button onClick={() => setQrEditor(true)}>
+            <QrCode size={18} /> Gerar todos os QR Codes / editor
+          </button>
+        )}
         {writable && (
           <button className="primary" onClick={() => setEditor(undefined)}>
             <Plus size={18} /> Novo cadastro
@@ -247,7 +280,7 @@ export function Entities({ kind }: { kind: string }) {
               <option value="missing">Validade não informada</option>
             </select>
           )}
-          <span className="record-count">{filtered.length} registros</span>
+          <span className="record-count">{total} registros</span>
         </div>
         {query.isPending ? (
           <p className="empty" role="status">
@@ -260,7 +293,7 @@ export function Entities({ kind }: { kind: string }) {
         ) : (
           <>
             <div className="table-wrap">
-              <table>
+              <table className="entity-table">
                 <thead>
                   <tr>
                     {config.columns.map((c) => (
@@ -300,6 +333,7 @@ export function Entities({ kind }: { kind: string }) {
                             <button
                               className="action-edit"
                               aria-label={`Editar ${r.name}`}
+                              title="Editar cadastro"
                               onClick={() => setEditor(r)}
                             >
                               <Pencil size={17} />
@@ -307,6 +341,8 @@ export function Entities({ kind }: { kind: string }) {
                           )}
                           {kind === 'assets' && writable && (
                             <button
+                              className="action-transfer"
+                              title="Transferir patrimônio"
                               aria-label={`Transferir ${r.name}`}
                               onClick={() => setTransfer(r)}
                             >
@@ -315,6 +351,7 @@ export function Entities({ kind }: { kind: string }) {
                           )}
                           {kind === 'materials' && (
                             <button
+                              className="action-qrcode"
                               aria-label={`QR Code de ${r.name}`}
                               title="Gerar QR Code"
                               onClick={() => setQr(r)}
@@ -325,19 +362,22 @@ export function Entities({ kind }: { kind: string }) {
                           {kind === 'materials' && (
                             <button
                               className="action-barcode"
+                              title="Gerar código de barras"
                               aria-label={`Código de barras de ${r.name}`}
                               onClick={() => setBarcode(r)}
                             >
                               <Barcode size={17} />
                             </button>
                           )}
-                          {['materials', 'users'].includes(kind) &&
+                          {['materials', 'users', 'categories'].includes(kind) &&
                             user?.role === 'ADMIN' &&
                             r.id !== user.id && (
                               <button
                                 className="action-delete"
+                                title="Excluir cadastro"
                                 aria-label={`Excluir ${r.name}`}
                                 onClick={() => {
+                                  setReplacementId('');
                                   setRemoveMode('preserve');
                                   setRemoveConfirmation('');
                                   setRemove(r);
@@ -378,11 +418,29 @@ export function Entities({ kind }: { kind: string }) {
           wide={config.fields.length > 8}
           onClose={() => setEditor(null)}
         >
+          {kind === 'materials' && !editor && (
+            <p className="hint">
+              Todos os campos são opcionais. Código e nome serão gerados se estiverem vazios; o
+              saldo inicial será zero.
+            </p>
+          )}
           <EntityForm
             key={editor?.id || 'new'}
-            fields={config.fields.map((f) =>
-              kind === 'users' && f.key === 'password' ? { ...f, required: !editor } : f,
-            )}
+            fields={[
+              ...config.fields.map((f) =>
+                kind === 'users' && f.key === 'password' ? { ...f, required: !editor } : f,
+              ),
+              ...(kind === 'materials' && !editor
+                ? [
+                    {
+                      key: 'initialBalance',
+                      label: 'Saldo inicial (opcional)',
+                      type: 'number' as const,
+                      min: 0,
+                    },
+                  ]
+                : []),
+            ]}
             initial={editor || {}}
             lookups={lookups.data}
             onSubmit={save}
@@ -477,6 +535,69 @@ export function Entities({ kind }: { kind: string }) {
           />
         </Modal>
       )}
+      {qrEditor && (
+        <Modal title="Editor de etiquetas QR Code" wide onClose={() => setQrEditor(false)}>
+          <QrLabelEditor />
+        </Modal>
+      )}
+      {remove && kind === 'categories' && (
+        <Modal title="Excluir categoria" onClose={() => !removing && setRemove(null)}>
+          <p>
+            Excluir a categoria <strong>{remove.name}</strong>?
+          </p>
+          <p>
+            Se houver materiais ou bens vinculados, escolha para qual categoria eles devem ser
+            transferidos.
+          </p>
+          <label>
+            Categoria de destino
+            <select
+              value={replacementId}
+              onChange={(e) => setReplacementId(e.target.value)}
+              disabled={removing}
+            >
+              <option value="">Excluir somente se estiver vazia</option>
+              {lookups.data?.categories
+                .filter((c) => c.id !== remove.id && c.active)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <div className="form-actions">
+            <button disabled={removing} onClick={() => setRemove(null)}>
+              Cancelar
+            </button>
+            <button
+              className="danger"
+              disabled={removing}
+              onClick={async () => {
+                setRemoving(true);
+                try {
+                  await api(
+                    '/categories/' + remove.id,
+                    'DELETE',
+                    replacementId ? { replacementId } : {},
+                  );
+                  setRemove(null);
+                  toast('Categoria excluída.');
+                  await invalidate();
+                  await cache.invalidateQueries({ queryKey: ['materials'] });
+                  await cache.invalidateQueries({ queryKey: ['assets'] });
+                } catch (error) {
+                  toast((error as Error).message, true);
+                } finally {
+                  setRemoving(false);
+                }
+              }}
+            >
+              {removing ? 'Excluindo…' : 'Confirmar exclusão'}
+            </button>
+          </div>
+        </Modal>
+      )}
       {barcode && (
         <Modal title="Etiqueta do material" onClose={() => setBarcode(null)}>
           <BarcodeLabel row={barcode} />
@@ -484,7 +605,7 @@ export function Entities({ kind }: { kind: string }) {
       )}
       {qr && (
         <Modal title="QR Code do material" onClose={() => setQr(null)}>
-          <MaterialQrLabel row={query.data?.find((m) => m.id === qr.id) || qr} />
+          <MaterialQrLabel row={query.data?.rows.find((m) => m.id === qr.id) || qr} />
         </Modal>
       )}
       {remove && kind === 'users' && (

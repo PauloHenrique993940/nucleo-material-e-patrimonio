@@ -45,14 +45,14 @@ export function Stock({ type }: { type: 'IN' | 'OUT' }) {
   const fields: Field[] = [
     { key: 'materialId', label: 'Material', type: 'select', source: 'materials', required: true },
     { key: 'quantity', label: 'Quantidade', type: 'number', required: true, min: 1 },
-    { key: 'date', label: 'Data', type: 'date', required: true },
+    { key: 'date', label: 'Data', type: 'date', required: type === 'OUT' },
     ...(type === 'IN'
       ? [
           { key: 'supplierId', label: 'Fornecedor', type: 'select', source: 'suppliers' } as Field,
           { key: 'invoice', label: 'Nota fiscal' },
           { key: 'process', label: 'Número do processo' },
           { key: 'unitPrice', label: 'Valor unitário', type: 'number' } as Field,
-          { key: 'receiver', label: 'Responsável pelo recebimento', required: true },
+          { key: 'receiver', label: 'Responsável pelo recebimento' },
         ]
       : [
           {
@@ -164,7 +164,7 @@ export function Stock({ type }: { type: 'IN' | 'OUT' }) {
                       return;
                     }
                   }
-                  setPending(data);
+                  setPending({ ...data, date: data.date || undefined });
                 }}
               />
             </>

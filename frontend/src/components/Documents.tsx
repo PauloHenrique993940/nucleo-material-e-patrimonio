@@ -1,3 +1,5 @@
+import { DocumentEditor } from './DocumentEditor';
+import { templateDocumentHTML } from '../utils/documentEditor';
 import { useState } from 'react';
 import { FileText, FileDown, Plus, Trash2 } from 'lucide-react';
 import { Modal } from './Modal';
@@ -26,6 +28,7 @@ export function Documents() {
     items: [blankItem()],
   });
   const [busy, setBusy] = useState(false);
+  const [editorHTML, setEditorHTML] = useState<string | null>(null);
   const field = (
     key: keyof Omit<DocumentData, 'items'>,
     label: string,
@@ -54,6 +57,16 @@ export function Documents() {
         </div>
         <FileText size={32} aria-hidden="true" />
       </div>
+      <div className="form-actions">
+        <button
+          onClick={() => {
+            setSelected(null);
+            setEditorHTML('<h1>Documento</h1><p>Digite seu texto aqui.</p>');
+          }}
+        >
+          Novo documento livre / abrir arquivo
+        </button>
+      </div>
       <div className="document-template-grid">
         {documentTemplates.map((template) => (
           <article key={template.id} className="document-template">
@@ -76,6 +89,7 @@ export function Documents() {
                   notes: '',
                   items: [blankItem()],
                 });
+                setEditorHTML(null);
                 setSelected(template);
               }}
             >
@@ -84,142 +98,173 @@ export function Documents() {
           </article>
         ))}
       </div>
+      {editorHTML !== null && !selected && (
+        <Modal title="Editor de documentos" wide onClose={() => setEditorHTML(null)}>
+          <DocumentEditor initialHTML={editorHTML} title="Documento" />
+        </Modal>
+      )}
       {selected && (
-        <Modal title={selected.title} onClose={() => !busy && setSelected(null)}>
-          <p>{selected.description} Os campos com * são obrigatórios.</p>
-          <form
-            onSubmit={async (event) => {
-              event.preventDefault();
-              if (
-                data.items.some((item) => !item.name.trim()) ||
-                !data.department.trim() ||
-                !data.person.trim() ||
-                !data.issuer.trim() ||
-                (selected.id === 'transferencia' && !data.destination.trim()) ||
-                data.items.some((item) => !item.unit.trim())
-              ) {
-                toast('Preencha os campos obrigatórios.', true);
-                return;
-              }
-              setBusy(true);
-              try {
-                await exportDocumentPDF(selected, data);
-                toast('PDF gerado.');
-              } catch (error) {
-                toast(
-                  error instanceof Error ? error.message : 'Não foi possível gerar o documento.',
-                  true,
-                );
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            <fieldset disabled={busy} className="document-fields">
-              <div className="form-grid">
-                {field('number', 'Número do documento')}
-                {field('date', 'Data', true, 'date')}
-                {field(
-                  'department',
-                  selected.id === 'transferencia' ? 'Setor de origem' : 'Setor',
-                  true,
-                )}
-                {selected.id === 'transferencia'
-                  ? field('destination', 'Setor de destino', true)
-                  : field('process', 'Processo / referência')}
-                {field('person', 'Responsável / recebedor', true)}
-                {field('registration', 'Matrícula')}
-                {field('issuer', 'Emitente', true)}
-                {selected.id === 'transferencia' && field('process', 'Processo / referência')}
-              </div>
-              <div className="document-items-heading">
-                <h3>Itens do documento</h3>
-                <button
-                  type="button"
-                  disabled={data.items.length >= 100}
-                  onClick={() =>
-                    setData((previous) => ({
-                      ...previous,
-                      items: [...previous.items, blankItem()],
-                    }))
+        <Modal
+          title={selected.title}
+          wide
+          onClose={() => {
+            if (!busy) {
+              setSelected(null);
+              setEditorHTML(null);
+            }
+          }}
+        >
+          {editorHTML !== null ? (
+            <DocumentEditor initialHTML={editorHTML} title={selected.title} />
+          ) : (
+            <>
+              <p>{selected.description} Os campos com * são obrigatórios.</p>
+              <form
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  if (
+                    data.items.some((item) => !item.name.trim()) ||
+                    !data.department.trim() ||
+                    !data.person.trim() ||
+                    !data.issuer.trim() ||
+                    (selected.id === 'transferencia' && !data.destination.trim()) ||
+                    data.items.some((item) => !item.unit.trim())
+                  ) {
+                    toast('Preencha os campos obrigatórios.', true);
+                    return;
                   }
-                >
-                  <Plus size={16} /> Adicionar item
-                </button>
-              </div>
-              <div className="document-items">
-                {data.items.map((item, index) => (
-                  <div className="document-item" key={index}>
-                    <strong className="document-item-number">Item {index + 1}</strong>
-                    {(['code', 'name', 'quantity', 'unit'] as const).map((key) => (
-                      <label key={key}>
-                        {
-                          {
-                            code: 'Código / patrimônio',
-                            name: 'Descrição *',
-                            quantity:
-                              selected.id === 'inventario' ? 'Contagem física *' : 'Quantidade *',
-                            unit: 'Unidade *',
-                          }[key]
-                        }
-                        <input
-                          required={key !== 'code'}
-                          type={key === 'quantity' ? 'number' : 'text'}
-                          min={selected.id === 'inventario' ? 0 : 1}
-                          step="1"
-                          max={2147483647}
-                          maxLength={key === 'unit' ? 20 : 200}
-                          value={item[key]}
-                          onChange={(event) =>
-                            setData((previous) => ({
-                              ...previous,
-                              items: previous.items.map((row, i) =>
-                                i === index ? { ...row, [key]: event.target.value } : row,
-                              ),
-                            }))
-                          }
-                        />
-                      </label>
-                    ))}
+                  setBusy(true);
+                  try {
+                    await exportDocumentPDF(selected, data);
+                    toast('PDF gerado.');
+                  } catch (error) {
+                    toast(
+                      error instanceof Error
+                        ? error.message
+                        : 'Não foi possível gerar o documento.',
+                      true,
+                    );
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                <fieldset disabled={busy} className="document-fields">
+                  <div className="form-grid">
+                    {field('number', 'Número do documento')}
+                    {field('date', 'Data', true, 'date')}
+                    {field(
+                      'department',
+                      selected.id === 'transferencia' ? 'Setor de origem' : 'Setor',
+                      true,
+                    )}
+                    {selected.id === 'transferencia'
+                      ? field('destination', 'Setor de destino', true)
+                      : field('process', 'Processo / referência')}
+                    {field('person', 'Responsável / recebedor', true)}
+                    {field('registration', 'Matrícula')}
+                    {field('issuer', 'Emitente', true)}
+                    {selected.id === 'transferencia' && field('process', 'Processo / referência')}
+                  </div>
+                  <div className="document-items-heading">
+                    <h3>Itens do documento</h3>
                     <button
                       type="button"
-                      className="document-remove-item"
-                      aria-label={`Remover item ${index + 1}`}
-                      disabled={data.items.length === 1}
+                      disabled={data.items.length >= 100}
                       onClick={() =>
                         setData((previous) => ({
                           ...previous,
-                          items: previous.items.filter((_, i) => i !== index),
+                          items: [...previous.items, blankItem()],
                         }))
                       }
                     >
-                      <Trash2 size={18} />
+                      <Plus size={16} /> Adicionar item
                     </button>
                   </div>
-                ))}
-              </div>
-              <label>
-                Finalidade / observações
-                <textarea
-                  maxLength={3000}
-                  rows={3}
-                  value={data.notes}
-                  onChange={(event) =>
-                    setData((previous) => ({ ...previous, notes: event.target.value }))
-                  }
-                />
-              </label>
-            </fieldset>
-            <div className="form-actions">
-              <button type="button" disabled={busy} onClick={() => setSelected(null)}>
-                Cancelar
-              </button>
-              <button className="primary" disabled={busy} type="submit">
-                <FileDown size={17} />
-                {busy ? 'Gerando…' : 'Gerar PDF'}
-              </button>
-            </div>
-          </form>
+                  <div className="document-items">
+                    {data.items.map((item, index) => (
+                      <div className="document-item" key={index}>
+                        <strong className="document-item-number">Item {index + 1}</strong>
+                        {(['code', 'name', 'quantity', 'unit'] as const).map((key) => (
+                          <label key={key}>
+                            {
+                              {
+                                code: 'Código / patrimônio',
+                                name: 'Descrição *',
+                                quantity:
+                                  selected.id === 'inventario'
+                                    ? 'Contagem física *'
+                                    : 'Quantidade *',
+                                unit: 'Unidade *',
+                              }[key]
+                            }
+                            <input
+                              required={key !== 'code'}
+                              type={key === 'quantity' ? 'number' : 'text'}
+                              min={selected.id === 'inventario' ? 0 : 1}
+                              step="1"
+                              max={2147483647}
+                              maxLength={key === 'unit' ? 20 : 200}
+                              value={item[key]}
+                              onChange={(event) =>
+                                setData((previous) => ({
+                                  ...previous,
+                                  items: previous.items.map((row, i) =>
+                                    i === index ? { ...row, [key]: event.target.value } : row,
+                                  ),
+                                }))
+                              }
+                            />
+                          </label>
+                        ))}
+                        <button
+                          type="button"
+                          className="document-remove-item"
+                          aria-label={`Remover item ${index + 1}`}
+                          disabled={data.items.length === 1}
+                          onClick={() =>
+                            setData((previous) => ({
+                              ...previous,
+                              items: previous.items.filter((_, i) => i !== index),
+                            }))
+                          }
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <label>
+                    Finalidade / observações
+                    <textarea
+                      maxLength={3000}
+                      rows={3}
+                      value={data.notes}
+                      onChange={(event) =>
+                        setData((previous) => ({ ...previous, notes: event.target.value }))
+                      }
+                    />
+                  </label>
+                </fieldset>
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setEditorHTML(templateDocumentHTML(selected, data))}
+                  >
+                    Abrir no editor: logo, imagens e texto
+                  </button>
+                  <button type="button" disabled={busy} onClick={() => setSelected(null)}>
+                    Cancelar
+                  </button>
+                  <button className="primary" disabled={busy} type="submit">
+                    <FileDown size={17} />
+                    {busy ? 'Gerando…' : 'Gerar PDF'}
+                  </button>
+                </div>
+              </form>
+            </>
+          )}
         </Modal>
       )}
     </section>

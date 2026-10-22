@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import swaggerUi from 'swagger-ui-express';
 import { db } from './repositories/db.js';
 import { openapi } from './openapi.js';
@@ -22,6 +23,16 @@ app.use(
   cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173' }),
   express.json({ limit: '100kb' }),
 );
+app.use('/api', (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+}, rateLimit({
+  windowMs: 60 * 1000,
+  limit: 300,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { message: 'Muitas requisições. Aguarde um minuto e tente novamente.' },
+}));
 app.get('/api/health', async (_req, res) => {
   await db.$queryRaw`SELECT 1`;
   res.json({ status: 'ok' });

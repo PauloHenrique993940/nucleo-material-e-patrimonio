@@ -15,5 +15,7 @@ export async function api<T = any>(path: string, method = 'GET', body?: unknown)
       window.dispatchEvent(new Event('session-expired'));
     throw new Error(data?.message || 'Não foi possível concluir a operação.');
   }
+  if (method.toUpperCase() !== 'GET' && !path.startsWith('/auth/'))
+    window.dispatchEvent(new Event('dashboard-changed'));
   return data;
 }

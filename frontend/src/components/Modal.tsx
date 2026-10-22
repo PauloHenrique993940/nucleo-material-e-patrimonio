@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { PanelsTopLeft, X } from 'lucide-react';
 export function Modal({
   title,
@@ -22,7 +23,7 @@ export function Modal({
       previous?.focus();
     };
   }, []);
-  return (
+  return createPortal(
     <dialog
       className={`app-modal${wide ? ' app-modal-wide' : ''}`}
       ref={ref}
@@ -42,6 +43,7 @@ export function Modal({
         </button>
       </div>
       <div className="dialog-body">{children}</div>
-    </dialog>
+    </dialog>,
+    document.body,
   );
 }

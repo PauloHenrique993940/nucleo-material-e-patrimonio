@@ -1,0 +1,128 @@
+.institutional-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  gap: 28px;
+}
+.institutional-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 36px;
+  border-radius: 8px;
+  border-bottom: 4px solid #c5a45b;
+  background: #0b294d;
+  color: #fff;
+}
+.institutional-kicker {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  line-height: 1.7;
+}
+.institutional-hero h1 {
+  margin: 12px 0 8px;
+  font-size: clamp(28px, 4vw, 36px);
+  line-height: 1.2;
+  color: #fff;
+}
+.institutional-hero p { margin: 0; color: #d4e1ef; }
+.institutional-hero > svg { flex-shrink: 0; color: #c5a45b; }
+.institutional-page .card { margin: 0; padding: 28px; }
+.institutional-page h2 { margin: 0 0 16px; font-size: 21px; line-height: 1.4; }
+.institutional-page .eyebrow { display: block; margin-bottom: 10px; }
+.institutional-page p { line-height: 1.8; }
+.institutional-page .card p { margin: 0; max-width: 95ch; }
+.institutional-page .institutional-intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 32px;
+  border-top: 3px solid var(--primary);
+  box-shadow: 0 8px 28px rgb(11 41 77 / 5%);
+}
+.institutional-intro-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: var(--soft);
+  color: var(--primary);
+  border: 1px solid var(--border);
+}
+.institutional-intro-content { flex: 1; min-width: 0; }
+.institutional-intro .eyebrow { font-size: 11px; letter-spacing: 1.6px; }
+.institutional-intro h2 { font-size: clamp(20px, 2.5vw, 25px); letter-spacing: -0.4px; margin-bottom: 18px; }
+.institutional-page .institutional-intro p { max-width: 88ch; font-size: 15px; line-height: 1.9; color: var(--muted); }
+.institutional-intro strong { color: var(--text); font-weight: 600; }
+.institutional-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.institutional-duty {
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: 6px;
+}
+.institutional-duty h3 { margin: 0 0 10px; font-size: 16px; color: var(--text); }
+.institutional-duty p { margin: 0; color: var(--muted); }
+.institutional-team-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.institutional-server {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 20px;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--primary);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgb(11 41 77 / 5%);
+}
+.institutional-server-avatar {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 18px;
+  border-radius: 50%;
+  color: var(--primary);
+  background: var(--soft);
+  border: 1px solid var(--border);
+}
+.institutional-server-number { color: var(--primary); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.institutional-server h3 { margin: 8px 0 4px; font-size: 18px; color: var(--text); }
+.institutional-server p { margin: 0; font-size: 14px; color: var(--muted); }
+.institutional-server-unit { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); width: 100%; font-size: 12px; color: var(--muted); }
+@media (max-width: 900px) {
+  .institutional-team-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.institutional-sources ul { display: grid; gap: 12px; padding: 0; margin: 0; list-style: none; }
+.institutional-sources a { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; text-decoration: underline; text-underline-offset: 3px; }
+.institutional-link-note { color: var(--muted); font-size: 12px; }
+@media (max-width: 640px) {
+  .institutional-page { gap: 20px; }
+  .institutional-hero, .institutional-page .card { padding: 24px; }
+  .institutional-hero > svg { display: none; }
+  .institutional-grid { grid-template-columns: 1fr; }
+  .institutional-team-grid { grid-template-columns: 1fr; }
+  .institutional-page .institutional-intro { flex-direction: column; gap: 18px; padding: 24px; }
+  .institutional-intro-icon { width: 52px; height: 52px; border-radius: 12px; }
+}

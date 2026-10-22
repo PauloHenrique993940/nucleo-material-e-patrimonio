@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { NavLink, Outlet, Link } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  RefreshCw,
   Package,
   LayoutDashboard,
   ArrowDownToLine,
@@ -15,6 +16,7 @@ import {
   FileChartColumn,
   ShieldCheck,
   Settings,
+  Info,
   Search,
   Bell,
   LogOut,
@@ -22,12 +24,13 @@ import {
   Sun,
   Moon,
   X,
+  Cloud,
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../services/api';
 import { roles } from '../utils/format';
 import { useDebounce } from '../hooks/useDebounce';
-import { useDashboard } from '../hooks/useDashboard';
+import { useStockAlerts } from '../hooks/useStockAlerts';
 const links = [
   ['/', 'Dashboard', LayoutDashboard],
   ['/materials', 'Materiais', Package],
@@ -42,11 +45,11 @@ const links = [
   ['/users', 'Usuários', Users],
   ['/audit', 'Auditoria', ShieldCheck],
   ['/settings', 'Configurações', Settings],
+  ['/quem-somos', 'Quem somos', Info],
 ] as const;
 export function Layout() {
-  const location = useLocation();
-  const current = links.find(([path]) => path === location.pathname) || links[0];
-  const ModuleIcon = current[2];
+  const cache = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
   const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 900px)').matches);
   const menuRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
@@ -75,7 +78,7 @@ export function Layout() {
     queryFn: () => api('/search?q=' + encodeURIComponent(debounced)),
     enabled: debounced.length >= 2,
   });
-  const dashboard = useDashboard();
+  const alerts = useStockAlerts();
   const allowed = links.filter(
     ([path]) =>
       !(['/users', '/audit'].includes(path) && user?.role !== 'ADMIN') &&
@@ -92,7 +95,7 @@ export function Layout() {
         ref={sidebarRef}
         id="navigation-sidebar"
         className={`sidebar ${open ? 'open' : ''}`}
-        inert={mobile && !open}
+
         role={mobile && open ? 'dialog' : undefined}
         aria-modal={mobile && open ? true : undefined}
         aria-label={mobile && open ? 'Navegação' : undefined}
@@ -117,9 +120,6 @@ export function Layout() {
         }}
       >
         <Link className="brand" to="/">
-          <span>
-            <Package size={25} />
-          </span>
           <div>
             Núcleo<small>SSP · MATERIAL E PATRIMÔNIO</small>
           </div>
@@ -127,9 +127,16 @@ export function Layout() {
         <span className="nav-label">ÁREA DE TRABALHO</span>
         <nav aria-label="Menu principal">
           {allowed.map(([path, label, Icon]) => (
-            <NavLink key={path} to={path} end={path === '/'} onClick={closeMenu}>
+            <NavLink
+              key={path}
+              to={path}
+              end={path === '/'}
+              onClick={closeMenu}
+              aria-label={label}
+              title={label}
+            >
               <Icon size={19} />
-              {label}
+              <span>{label}</span>
             </NavLink>
           ))}
         </nav>
@@ -162,15 +169,12 @@ export function Layout() {
           >
             <Menu />
           </button>
-          <div className="module-indicator">
-            <span>
-              <ModuleIcon size={20} />
-            </span>
-            <div>
-              <small>ÁREA DE TRABALHO</small>
-              <strong>{current[1]}</strong>
-            </div>
-          </div>
+          <Link className="header-brand" to="/" aria-label="Núcleo — início">
+            <Cloud size={27} aria-hidden="true" />
+            <strong>
+              Núcleo <span>Material e Patrimônio</span>
+            </strong>
+          </Link>
           <div className="global-search">
             <Search size={18} />
             <input
@@ -219,6 +223,24 @@ export function Layout() {
           </div>
           <div className="topbar-actions">
             <button
+              title="Atualizar página"
+              aria-label="Atualizar página"
+              disabled={refreshing}
+              onClick={async () => {
+                setRefreshing(true);
+                try {
+                  await cache.refetchQueries({ type: 'active' }, { throwOnError: true });
+                  toast('Dados atualizados.');
+                } catch (error) {
+                  toast((error as Error).message, true);
+                } finally {
+                  setRefreshing(false);
+                }
+              }}
+            >
+              <RefreshCw size={20} className={refreshing ? 'refresh-spinning' : ''} />
+            </button>
+            <button
               onClick={toggleTheme}
               aria-label={dark ? 'Ativar tema claro' : 'Ativar tema escuro'}
             >
@@ -226,25 +248,32 @@ export function Layout() {
             </button>
             <div className="notifications">
               <button
-                aria-label={`Alertas de estoque: ${dashboard.data?.alerts.length || 0}`}
+                aria-label={`Alertas de estoque: ${alerts.data?.length || 0}`}
+                aria-expanded={notifications}
                 onClick={() => setNotifications((v) => !v)}
               >
                 <Bell size={20} />
-                {!!dashboard.data?.alerts.length && <span className="notification-dot" />}
+                {!!alerts.data?.length && (
+                  <span className="notification-dot">{alerts.data.length}</span>
+                )}
               </button>
               {notifications && (
                 <div className="notification-panel">
                   <h3>Alertas de estoque</h3>
-                  {dashboard.data?.alerts.length ? (
-                    dashboard.data.alerts.slice(0, 8).map((a: any) => (
+                  {alerts.isError ? (
+                    <p role="alert">Não foi possível atualizar os alertas.</p>
+                  ) : alerts.isPending ? (
+                    <p>Carregando alertas…</p>
+                  ) : alerts.data?.length ? (
+                    alerts.data.map((a) => (
                       <Link
                         key={a.id}
-                        to={`/materials?q=${encodeURIComponent(a.name)}`}
+                        to={`/materials?q=${encodeURIComponent(a.code)}`}
                         onClick={() => setNotifications(false)}
                       >
                         {a.name}
                         <small>
-                          {a.status} · {a.quantity} unidades
+                          {a.status} · {a.quantity} {a.unit} · mínimo: {a.minimum}
                         </small>
                       </Link>
                     ))
@@ -264,7 +293,17 @@ export function Layout() {
           <Outlet />
         </main>
         <footer className="app-footer">
-          SSP · Núcleo de Material e Patrimônio <span>Gestão com rastreabilidade</span>
+          <div className="app-footer-copy">
+            <span>SSP · Núcleo de Material e Patrimônio</span>
+            <span>Gestão com rastreabilidade</span>
+          </div>
+          <img
+            className="app-footer-logo"
+            src="/images/governo-bahia.jpg"
+            alt="Bahia — Governo do Estado"
+            width={180}
+            height={56}
+          />
         </footer>
       </div>
     </div>

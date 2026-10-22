@@ -358,11 +358,17 @@ button.danger:disabled {
   background: #c88746;
   border: 2px solid var(--surface);
   border-radius: 50%;
-  height: 9px;
-  width: 9px;
+  min-height: 20px;
+  min-width: 20px;
+  padding: 1px 4px;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
   position: absolute;
-  right: 8px;
-  top: 6px;
+  right: 0;
+  top: 0;
 }
 .notification-panel,
 .search-results {
@@ -1338,7 +1344,7 @@ dialog::backdrop {
   width: 100%;
   max-width: 365px;
 }
-.login-form h2 {
+.login-form h1 {
   font-size: 28px;
   letter-spacing: -0.7px;
   margin: 22px 0 9px;
@@ -1684,4 +1690,224 @@ dialog::backdrop {
   tr {
     break-inside: avoid;
   }
+}
+
+@media print {
+  .app-modal[open] {
+    display: block;
+    position: static;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+    color: #000;
+  }
+  .app-modal .dialog-heading,
+  .app-modal .form-actions,
+  .app-modal button {
+    display: none !important;
+  }
+  .app-modal .dialog-body {
+    padding: 0;
+    overflow: visible;
+    max-height: none;
+    background: #fff;
+    color: #000;
+  }
+  .app-modal::backdrop {
+    background: transparent;
+    backdrop-filter: none;
+  }
+  .app-modal .barcode-label {
+    break-inside: avoid;
+    color: #000;
+  }
+  .app-modal .material-qr-label img {
+    display: block;
+    width: 95mm !important;
+    max-width: 100% !important;
+    height: auto;
+    margin: 6mm auto;
+  }
+}
+
+/* Keep each ranking label and bar readable as more materials are added. */
+.ranking-chart-scroll {
+  max-height: 440px;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.refresh-spinning {
+  animation: refresh-rotate 1s linear infinite;
+}
+@keyframes refresh-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.qr-preview-grid {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0;
+}
+.qr-preview-label {
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  overflow-wrap: anywhere;
+  min-width: 0;
+  background: #fff;
+  color: #192535;
+}
+.qr-preview-label img {
+  width: 100%;
+  max-width: 180px;
+  height: auto;
+}
+.qr-preview-label small {
+  font-size: inherit;
+}
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+  padding: 12px;
+  background: var(--surface-alt, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 12px 0;
+}
+.editor-toolbar label {
+  min-width: 90px;
+}
+.editor-toolbar button {
+  padding: 8px 10px;
+}
+.editor-toolbar input[type='color'] {
+  width: 56px;
+  padding: 4px;
+}
+.editor-file-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.editor-file-tools input {
+  width: 100%;
+}
+.editor-image-tools {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.document-editor-scroll {
+  overflow: auto;
+  max-height: 65vh;
+  background: #e5e7eb;
+  padding: 16px;
+  border-radius: 6px;
+}
+.document-editor .document-page {
+  box-sizing: border-box;
+  width: 720px;
+  min-height: 900px;
+  padding: 32px;
+  margin: 0 auto;
+  background: white;
+  color: #192535;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  outline: 1px solid #cbd5e1;
+}
+.document-editor .document-page h1 {
+  font-size: 24px;
+}
+.document-editor .document-page h2 {
+  font-size: 20px;
+}
+.document-editor .document-page h3 {
+  font-size: 17px;
+}
+.document-editor .document-page p {
+  color: inherit;
+}
+.document-editor .document-page img {
+  max-width: 100%;
+  height: auto;
+  cursor: pointer;
+}
+.document-editor .document-page table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 16px 0;
+  table-layout: fixed;
+}
+.document-editor .document-page td,
+.document-editor .document-page th {
+  border: 1px solid #cbd5e1;
+  padding: 8px;
+  text-align: left;
+  overflow-wrap: anywhere;
+  color: inherit;
+}
+.document-editor .document-page th {
+  background: #edf3f7;
+}
+.document-editor .document-page tr {
+  background: transparent;
+}
+.document-editor .document-page:focus {
+  outline: 2px solid #174b70;
+}
+@media (max-width: 600px) {
+  .qr-preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .editor-toolbar {
+    gap: 6px;
+    padding: 8px;
+  }
+}
+.ranking-chart-canvas {
+  min-width: 420px;
+}
+.ranking-chart-label {
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  text-align: right;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+.ranking-chart-label span {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.category-legend {
+  max-height: 180px;
+  overflow: auto;
+  align-content: start;
 }

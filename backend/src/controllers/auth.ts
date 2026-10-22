@@ -14,7 +14,9 @@ export async function login(req: Request, res: Response) {
     where: { OR: [{ email: data.login.toLowerCase() }, { registration: data.login }] },
     include: { role: true },
   });
-  if (!u?.active || !(await bcrypt.compare(data.password, u.passwordHash)))
+  // Always perform a password check, including unknown users, to reduce account enumeration.
+  const validPassword = await bcrypt.compare(data.password, u?.passwordHash || dummyPasswordHash);
+  if (!u?.active || u.deletedAt || !validPassword)
     throw new AppError(401, 'E-mail, matrícula ou senha incorretos.');
   const token = jwt.sign({ sub: u.id, version: u.sessionVersion }, jwtSecret, {
     expiresIn: '8h',
@@ -25,3 +27,4 @@ export async function login(req: Request, res: Response) {
   });
   res.json({ token, user: publicUser(u) });
 }
+const dummyPasswordHash = bcrypt.hashSync('unavailable-account-password', 12);

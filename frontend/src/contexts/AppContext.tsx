@@ -43,6 +43,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return () => clearTimeout(id);
     }
   }, [message]);
+  useEffect(() => {
+    const channel = typeof BroadcastChannel !== 'undefined'
+      ? new BroadcastChannel('nucleo-dashboard')
+      : null;
+    const refresh = () => {
+      void cache.invalidateQueries({ queryKey: ['dashboard'] });
+      void cache.invalidateQueries({ queryKey: ['stock-alerts'] });
+    };
+    const changed = () => {
+      refresh();
+      channel?.postMessage('changed');
+    };
+    window.addEventListener('dashboard-changed', changed);
+    if (channel) channel.onmessage = refresh;
+    return () => {
+      window.removeEventListener('dashboard-changed', changed);
+      channel?.close();
+    };
+  }, [cache]);
   const login = async (login: string, password: string) => {
     const d = await api<{ token: string; user: User }>('/auth/login', 'POST', { login, password });
     cache.clear();

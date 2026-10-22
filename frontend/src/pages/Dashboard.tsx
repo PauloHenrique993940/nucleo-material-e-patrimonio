@@ -1,5 +1,6 @@
 import { useDashboard } from '../hooks/useDashboard';
 import { Link } from 'react-router-dom';
+import { useApp } from '../contexts/AppContext';
 import {
   Package,
   Boxes,
@@ -10,6 +11,8 @@ import {
   Wallet,
   Building2,
   ArrowRight,
+  Truck,
+  Network,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -28,8 +31,9 @@ import {
 import { currency, date } from '../utils/format';
 export function Dashboard() {
   const query = useDashboard();
+  const { user } = useApp();
   if (query.isPending) return <p role="status">Carregando visão geral…</p>;
-  if (query.isError)
+  if (query.isError && !query.data)
     return (
       <div className="error-box" role="alert">
         {query.error.message}
@@ -39,44 +43,70 @@ export function Dashboard() {
   const d = query.data;
   const cards = [
     ['Materiais cadastrados', d.cards.materials, Package],
-    ['Itens em estoque', d.cards.quantity, Boxes],
-    ['Estoque baixo', d.cards.low, TriangleAlert],
     ['Sem estoque', d.cards.empty, PackageX],
     ['Entradas no mês', d.cards.entries, ArrowDownLeft],
     ['Saídas no mês', d.cards.exits, ArrowUpRight],
-    ['Valor do estoque', currency(d.cards.value), Wallet],
     ['Bens patrimoniais', d.cards.assets, Building2],
   ] as const;
+  const summary = [
+    ['Materiais com estoque baixo', d.cards.low, TriangleAlert, 'warning'],
+    ['Quantidade de itens no estoque', d.cards.quantity, Boxes, 'quantity'],
+    ['Custo total do estoque', currency(d.cards.value), Wallet, 'value'],
+  ] as const;
+  const shortcuts = [
+    ['/materials', 'Materiais', 'Cadastro de materiais.', Boxes],
+    ['/entries', 'Entradas', 'Gerenciar entradas de materiais no estoque.', Package],
+    ['/exits', 'Saídas', 'Gerenciar saídas de materiais do estoque.', Package],
+    ['/assets', 'Patrimônio', 'Consultar e gerenciar bens patrimoniais.', Building2],
+    ['/suppliers', 'Fornecedores', 'Cadastro de fornecedores.', Truck],
+    ['/departments', 'Setores', 'Cadastro de setores.', Network],
+  ] as const;
   return (
-    <>
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">VISÃO GERAL</span>
-          <h1>Dashboard</h1>
-          <p>Saldos de materiais, movimentações e bens patrimoniais.</p>
-        </div>
-        <span className="date-chip">
-          {new Date().toLocaleDateString('pt-BR', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-          })}
-        </span>
+    <div className="reference-dashboard">
+      <div className="page-heading dashboard-heading">
+        <h1>Dashboard</h1>
       </div>
+      <div className="dashboard-summary">
+        {summary.map(([label, value, Icon, tone]) => (
+          <article className={'summary-card summary-' + tone} key={label}>
+            <div>
+              <span>{label}</span>
+              <strong>{typeof value === 'number' ? value.toLocaleString('pt-BR') : value}</strong>
+            </div>
+            <Icon size={32} aria-hidden="true" />
+          </article>
+        ))}
+      </div>
+      <section className="dashboard-shortcuts" aria-labelledby="shortcuts-heading">
+        <h2 id="shortcuts-heading">Atalhos</h2>
+        <div className="shortcut-grid">
+          {shortcuts
+            .filter(([path]) => !(user?.role === 'VIEWER' && ['/entries', '/exits'].includes(path)))
+            .map(([path, label, description, Icon]) => (
+              <Link className="shortcut-card" to={path} key={path}>
+                <Icon size={48} strokeWidth={1.6} aria-hidden="true" />
+                <span className="shortcut-label">{label}</span>
+                <p>{description}</p>
+              </Link>
+            ))}
+        </div>
+      </section>
       <div className="stat-grid">
         {cards.map(([label, value, Icon], i) => (
           <article className="stat-card" key={label}>
-            <div className={`stat-icon tone-${i}`}>
+            <div className={`stat-icon tone-${[0, 3, 4, 5, 7][i]}`}>
               <Icon size={20} />
             </div>
             <span>{label}</span>
             <strong>{typeof value === 'number' ? value.toLocaleString('pt-BR') : value}</strong>
             <small>
-              {i === 2 || i === 3
+              {i === 1
                 ? 'Acompanhe a reposição'
-                : i === 4 || i === 5
-                  ? 'Quantidade movimentada'
-                  : 'Dados do cadastro atual'}
+                : i === 2
+                  ? 'Unidades recebidas no mês'
+                  : i === 3
+                    ? 'Unidades entregues no mês'
+                    : 'Dados do cadastro atual'}
             </small>
           </article>
         ))}
@@ -97,14 +127,14 @@ export function Dashboard() {
                 isAnimationActive={false}
                 dataKey="entrada"
                 name="Entradas"
-                fill="#174b70"
+                fill="var(--chart-in)"
                 radius={[4, 4, 0, 0]}
               />
               <Bar
                 isAnimationActive={false}
                 dataKey="saida"
                 name="Saídas"
-                fill="#7395a8"
+                fill="var(--chart-out)"
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>
@@ -136,7 +166,7 @@ export function Dashboard() {
                       <Cell
                         key={i}
                         fill={
-                          ['#174b70', '#7395a8', '#415785', '#e0b53b', '#bfd0dd', '#506faa'][i % 6]
+                          ['#19456b', '#168064', '#c65a12', '#d69a27', '#6d8ba3', '#4e988a'][i % 6]
                         }
                       />
                     ))}
@@ -162,20 +192,52 @@ export function Dashboard() {
             <span>Últimos 12 meses</span>
           </div>
           {d.top.length ? (
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={d.top} layout="vertical">
-                <XAxis type="number" />
-                <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 10 }} />
-                <Tooltip />
-                <Bar
-                  isAnimationActive={false}
-                  dataKey="quantity"
-                  name="Quantidade"
-                  fill="#174b70"
-                  radius={[0, 4, 4, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            <div
+              className="ranking-chart-scroll"
+              tabIndex={0}
+              role="region"
+              aria-label="Materiais mais movimentados, role para ver todos"
+            >
+              <div
+                className="ranking-chart-canvas"
+                style={{ height: Math.max(260, d.top.length * 72 + 40) }}
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={d.top}
+                    layout="vertical"
+                    margin={{ top: 8, right: 24, bottom: 8, left: 8 }}
+                    barSize={28}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" allowDecimals={false} />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={180}
+                      interval={0}
+                      tick={({ x, y, payload }) => (
+                        <g transform={`translate(${x},${y})`}>
+                          <foreignObject x={-176} y={-27} width={168} height={54}>
+                            <div className="ranking-chart-label" title={String(payload.value)}>
+                              <span>{payload.value}</span>
+                            </div>
+                          </foreignObject>
+                        </g>
+                      )}
+                    />
+                    <Tooltip />
+                    <Bar
+                      isAnimationActive={false}
+                      dataKey="quantity"
+                      name="Quantidade"
+                      fill="#174b70"
+                      radius={[0, 4, 4, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           ) : (
             <p className="empty">Nenhuma movimentação no período.</p>
           )}
@@ -196,7 +258,7 @@ export function Dashboard() {
                 type="monotone"
                 dataKey="estoque"
                 name="Saldo"
-                stroke="#174b70"
+                stroke="var(--chart-stock)"
                 strokeWidth={3}
                 dot={false}
               />
@@ -243,6 +305,6 @@ export function Dashboard() {
           {!d.latest.length && <p className="empty">Nenhuma movimentação registrada.</p>}
         </div>
       </section>
-    </>
+    </div>
   );
 }

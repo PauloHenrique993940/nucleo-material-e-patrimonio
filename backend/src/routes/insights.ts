@@ -4,6 +4,16 @@ import { db } from '../repositories/db.js';
 import { stockStatus } from '../utils/status.js';
 import { AppError } from '../utils/stock.js';
 export const insights = Router();
+insights.get('/alerts', async (_req, res) => {
+  const materials = await db.material.findMany({
+    where: { active: true, deletedAt: null },
+    select: { id: true, name: true, code: true, quantity: true, minimum: true, unit: true },
+    orderBy: [{ quantity: 'asc' }, { name: 'asc' }],
+  });
+  res.json(materials.filter((m) => m.quantity <= m.minimum).map((m) => ({
+    ...m, status: stockStatus(m.quantity, m.minimum),
+  })));
+});
 insights.get('/search', async (req, res) => {
   const q = z.string().trim().min(2).max(100).parse(req.query.q);
   const contains = { contains: q, mode: 'insensitive' as const };
@@ -36,12 +46,30 @@ insights.get('/search', async (req, res) => {
 });
 insights.get('/dashboard', async (_req, res) => {
   const now = new Date();
-  const month = new Date(now.getFullYear(), now.getMonth(), 1);
-  const start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  const calendar = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+  });
+  const parts = (date: Date) => Object.fromEntries(
+    calendar.formatToParts(date).map(({ type, value }) => [type, value]),
+  );
+  const today = parts(now);
+  const month = new Date(today.year + '-' + today.month + '-01T00:00:00-03:00');
+  const startMonth = new Date(Date.UTC(Number(today.year), Number(today.month) - 12, 1));
+  const start = new Date(startMonth.toISOString().slice(0, 10) + 'T00:00:00-03:00');
+  const endOfToday = new Date(new Date(today.year + '-' + today.month + '-' + today.day + 'T00:00:00-03:00').getTime() + 86400000);
+  const monthKey = (date: Date) => {
+    const p = parts(date);
+    return p.year + '-' + p.month;
+  };
   const [materials, movements, latest, assets] = await Promise.all([
     db.material.findMany({ where: { active: true, deletedAt: null }, include: { category: true } }),
     db.stockMovement.findMany({
-      where: { date: { gte: start, lte: now } },
+      // Operational totals exclude reversals and movements that have been reversed.
+      where: {
+        date: { gte: start, lt: endOfToday },
+        reversalOfId: null,
+        reversal: { is: null },
+      },
       include: { material: { select: { name: true } } },
       orderBy: { date: 'asc' },
     }),
@@ -53,10 +81,10 @@ insights.get('/dashboard', async (_req, res) => {
     db.patrimony.count(),
   ]);
   const series = Array.from({ length: 12 }, (_, i) => {
-    const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+    const d = new Date(Date.UTC(startMonth.getUTCFullYear(), startMonth.getUTCMonth() + i, 1, 12));
     return {
-      key: `${d.getFullYear()}-${d.getMonth()}`,
-      month: d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }),
+      key: monthKey(d),
+      month: d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', month: 'short', year: '2-digit' }),
       entrada: 0,
       saida: 0,
       estoque: 0,
@@ -64,7 +92,7 @@ insights.get('/dashboard', async (_req, res) => {
   });
   const top = new Map<string, { name: string; quantity: number }>();
   for (const m of movements) {
-    const point = series.find((x) => x.key === `${m.date.getFullYear()}-${m.date.getMonth()}`);
+    const point = series.find((x) => x.key === monthKey(m.date));
     if (point) point[m.type === 'IN' ? 'entrada' : 'saida'] += m.quantity;
     const item = top.get(m.materialId) || { name: m.material.name, quantity: 0 };
     item.quantity += m.quantity;
@@ -82,7 +110,7 @@ insights.get('/dashboard', async (_req, res) => {
     ledger.reduce((n, m) => n + (m.type === 'IN' ? m.quantity : -m.quantity), 0);
   for (const point of series) {
     for (const m of ledger)
-      if (point.key === `${m.createdAt.getFullYear()}-${m.createdAt.getMonth()}`)
+      if (point.key === monthKey(m.createdAt))
         balance += m.type === 'IN' ? m.quantity : -m.quantity;
     point.estoque = balance;
   }

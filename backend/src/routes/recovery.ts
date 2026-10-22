@@ -10,7 +10,10 @@ import { passwordSchema } from '../schemas/index.js';
 export const recovery = Router();
 recovery.use(
   ['/forgot-password', '/reset-password'],
-  rateLimit({ windowMs: 15 * 60 * 1000, limit: 10 }),
+  rateLimit({ windowMs: 15 * 60 * 1000, limit: 10,
+    standardHeaders: 'draft-8', legacyHeaders: false,
+    message: { message: 'Muitas tentativas de recuperação. Aguarde 15 minutos.' },
+  }),
 );
 recovery.post('/forgot-password', async (req, res) => {
   const { email } = z.object({ email: z.string().trim().email().toLowerCase() }).parse(req.body);

@@ -1,6 +1,6 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { Layout } from './layouts/Layout';
@@ -13,14 +13,22 @@ const Reports = lazy(() => import('./pages/Reports').then((m) => ({ default: m.R
 const Audit = lazy(() => import('./pages/Audit').then((m) => ({ default: m.Audit })));
 const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })));
 import './styles.css';
+const QuemSomos = lazy(() => import('./pages/QuemSomos').then((m) => ({ default: m.QuemSomos })));
 import './internal.css';
 import './login.css';
+import './reference.css';
 import './appearance.css';
 import { initializeAppearance } from './components/Appearance';
 initializeAppearance();
 const client = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 15000 } } });
 function App() {
   const { user, ready } = useApp();
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const publicPage = !user && (pathname === '/' || pathname === '/login');
+    const robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
+    if (robots) robots.content = publicPage ? 'index, follow' : 'noindex, nofollow, noarchive';
+  }, [pathname, user]);
   if (!ready)
     return (
       <main className="boot" role="status">
@@ -70,6 +78,7 @@ function App() {
           />
           <Route path="audit" element={user?.role === 'ADMIN' ? <Audit /> : <Navigate to="/" />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="quem-somos" element={<QuemSomos />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

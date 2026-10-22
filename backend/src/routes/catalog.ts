@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
@@ -8,6 +9,7 @@ import { allow, writers } from '../middlewares/auth.js';
 import { publicUser } from '../utils/session.js';
 import {
   materialSchema,
+  initialBalanceSchema,
   movementSchema,
   categorySchema,
   departmentSchema,
@@ -26,8 +28,50 @@ app.get('/auth/me', async (req, res) =>
 );
 app.post('/materials', allow(writers), async (req, res) => {
   const data = materialSchema.parse(req.body);
+  const initialBalance = initialBalanceSchema.parse(req.body.initialBalance);
   const row = await db.$transaction(async (tx) => {
-    const row = await tx.material.create({ data });
+    const categoryId =
+      data.categoryId ||
+      (
+        await tx.category.upsert({
+          where: { name: 'Sem categoria' },
+          update: {},
+          create: { name: 'Sem categoria' },
+        })
+      ).id;
+    const code = data.code || `MAT-${randomUUID()}`;
+    const row = await tx.material.create({
+      data: {
+        ...data,
+        categoryId,
+        code,
+        name: data.name || `Material ${code}`,
+        unit: data.unit || 'UN',
+        quantity: initialBalance,
+      },
+    });
+    if (initialBalance > 0) {
+      const movement = await tx.stockMovement.create({
+        data: {
+          materialId: row.id,
+          type: 'IN',
+          quantity: initialBalance,
+          previousBalance: 0,
+          currentBalance: initialBalance,
+          userId: req.session.id,
+          unitPrice: data.unitPrice,
+          notes: 'Saldo inicial',
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          userId: req.session.id,
+          operation: 'ENTRADA',
+          recordId: movement.id,
+          ip: req.ip,
+        },
+      });
+    }
     await tx.auditLog.create({
       data: { userId: req.session.id, operation: 'CADASTRO', recordId: row.id, ip: req.ip },
     });
@@ -41,7 +85,16 @@ app.put('/materials/:id', allow(writers), async (req, res) => {
     await tx.$queryRaw`SELECT id FROM "Material" WHERE id = ${String(req.params.id)} FOR UPDATE`;
     const existing = await tx.material.findUnique({ where: { id: String(req.params.id) } });
     if (!existing || existing.deletedAt) throw new AppError(404, 'Material não disponível.');
-    const row = await tx.material.update({ where: { id: String(req.params.id) }, data });
+    const row = await tx.material.update({
+      where: { id: String(req.params.id) },
+      data: {
+        ...data,
+        code: data.code || existing.code,
+        name: data.name || existing.name,
+        categoryId: data.categoryId || existing.categoryId,
+        unit: data.unit || 'UN',
+      },
+    });
     await tx.auditLog.create({
       data: {
         userId: req.session.id,
@@ -85,6 +138,42 @@ app.delete('/materials/:id', allow(['ADMIN']), async (req, res) => {
         userId: req.session.id,
         operation: mode === 'permanent' ? 'EXCLUSÃO DEFINITIVA' : 'REMOÇÃO DO CADASTRO',
         recordId: id,
+        ip: req.ip,
+      },
+    });
+  });
+  res.status(204).end();
+});
+app.delete('/categories/:id', allow(['ADMIN']), async (req, res) => {
+  const categoryId = z.string().uuid().parse(req.params.id);
+  const { replacementId } = z
+    .object({ replacementId: z.string().uuid().optional() })
+    .parse(req.body || {});
+  if (replacementId === categoryId) throw new AppError(400, 'Escolha outra categoria de destino.');
+  await db.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Category" WHERE id = ${categoryId} FOR UPDATE`;
+    const category = await tx.category.findUnique({ where: { id: categoryId } });
+    if (!category) throw new AppError(404, 'Categoria não encontrada.');
+    const linked =
+      (await tx.material.count({ where: { categoryId } })) +
+      (await tx.patrimony.count({ where: { categoryId } }));
+    if (linked && !replacementId)
+      throw new AppError(
+        409,
+        'Esta categoria possui materiais ou bens. Selecione uma categoria de destino.',
+      );
+    if (replacementId) {
+      const replacement = await tx.category.findUnique({ where: { id: replacementId } });
+      if (!replacement?.active) throw new AppError(400, 'Categoria de destino indisponível.');
+      await tx.material.updateMany({ where: { categoryId }, data: { categoryId: replacementId } });
+      await tx.patrimony.updateMany({ where: { categoryId }, data: { categoryId: replacementId } });
+    }
+    await tx.category.delete({ where: { id: categoryId } });
+    await tx.auditLog.create({
+      data: {
+        userId: req.session.id,
+        operation: 'EXCLUSÃO CATEGORIA',
+        recordId: categoryId,
         ip: req.ip,
       },
     });

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { db } from '../repositories/db.js';
-import { stockStatus } from '../utils/status.js';
+import { listMaterials } from '../repositories/materials.js';
 import { AppError } from '../utils/stock.js';
 export const lists = Router();
 const pagination = (query: Record<string, unknown>) =>
@@ -13,44 +13,7 @@ const pagination = (query: Record<string, unknown>) =>
       }
     : null;
 lists.get('/materials', async (req, res) => {
-  const q = z.string().max(200).default('').parse(req.query.q);
-  const sort = z
-    .enum(['name', 'code', 'quantity', 'unitPrice', 'createdAt'])
-    .default('name')
-    .parse(req.query.sort);
-  const order = z.enum(['asc', 'desc']).default('asc').parse(req.query.order);
-  const paging = pagination(req.query);
-  const where: Prisma.MaterialWhereInput = {
-    deletedAt: null,
-    OR: [
-      { name: { contains: q, mode: 'insensitive' } },
-      { code: { contains: q, mode: 'insensitive' } },
-      { barcode: { contains: q, mode: 'insensitive' } },
-    ],
-    ...(req.query.categoryId ? { categoryId: z.string().uuid().parse(req.query.categoryId) } : {}),
-    ...(req.query.supplierId ? { supplierId: z.string().uuid().parse(req.query.supplierId) } : {}),
-    ...(req.query.active
-      ? { active: z.enum(['true', 'false']).parse(req.query.active) === 'true' }
-      : {}),
-  };
-  const rows = await db.material.findMany({
-    where,
-    include: { category: true, supplier: true },
-    orderBy: { [sort]: order },
-  });
-  const filtered = req.query.stock
-    ? rows.filter((m) => stockStatus(m.quantity, m.minimum) === req.query.stock)
-    : rows;
-  res.json(
-    paging
-      ? {
-          rows: filtered.slice((paging.page - 1) * paging.size, paging.page * paging.size),
-          total: filtered.length,
-          page: paging.page,
-          pageSize: paging.size,
-        }
-      : filtered,
-  );
+  res.json(await listMaterials(req.query));
 });
 lists.get('/movements', async (req, res) => {
   const where: Prisma.StockMovementWhereInput = {};

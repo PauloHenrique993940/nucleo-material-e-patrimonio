@@ -368,6 +368,69 @@
   border-color: var(--border);
   border-radius: 5px;
 }
+.app-shell .row-actions:has(.action-details) {
+  gap: 8px;
+}
+.app-shell
+  .row-actions
+  :is(
+    .action-details,
+    .action-edit,
+    .action-transfer,
+    .action-qrcode,
+    .action-barcode,
+    .action-delete
+  ) {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 10px;
+  border-radius: 9px;
+  color: var(--action-color);
+  border-color: var(--action-border);
+  background: var(--action-background);
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+}
+.row-actions .action-qrcode,
+.row-actions .action-transfer {
+  --action-color: #0e7490;
+  --action-border: #a5f3fc;
+  --action-background: #ecfeff;
+  --action-hover: #cffafe;
+}
+.app-shell
+  .row-actions
+  :is(
+    .action-details,
+    .action-edit,
+    .action-transfer,
+    .action-qrcode,
+    .action-barcode,
+    .action-delete
+  ):hover {
+  border-color: var(--action-color);
+  background: var(--action-hover);
+}
+.app-shell
+  .row-actions
+  :is(
+    .action-details,
+    .action-edit,
+    .action-transfer,
+    .action-qrcode,
+    .action-barcode,
+    .action-delete
+  ):focus-visible {
+  outline: 2px solid var(--action-color);
+  outline-offset: 3px;
+}
+@media (pointer: coarse) {
+  .app-shell .row-actions:has(.action-details) button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
 .app-shell input,
 .app-shell select,
 .app-shell textarea {
@@ -525,5 +588,41 @@
     border: 0;
     margin: 0;
     padding: 0;
+  }
+}
+
+/* Institutional footer: preserve the original logo colors in both themes. */
+.app-shell .app-footer {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+}
+.app-footer-copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 24px;
+}
+.app-shell .app-footer-copy span {
+  display: block;
+}
+.app-footer-logo {
+  display: block;
+  flex: 0 0 auto;
+  width: 180px;
+  height: 56px;
+  object-fit: cover;
+  object-position: center 51%;
+  background: #fff;
+  border-radius: 4px;
+}
+@media (max-width: 600px) {
+  .app-shell .app-footer {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .app-footer-copy {
+    flex-direction: column;
   }
 }

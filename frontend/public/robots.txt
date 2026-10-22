@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /login
+Disallow: /api
+Disallow: /reset-password
+Disallow: /materials
+Disallow: /categories
+Disallow: /suppliers
+Disallow: /departments
+Disallow: /assets
+Disallow: /users
+Disallow: /entries
+Disallow: /exits
+Disallow: /movements
+Disallow: /reports
+Disallow: /audit
+Disallow: /settings
+
+Sitemap: https://nucleo-material-e-patrimonio.vercel.app/sitemap.xml

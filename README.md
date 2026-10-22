@@ -140,7 +140,7 @@ Gera um dump PostgreSQL no formato custom em `backups/`, ignorado pelo Git. Requ
 - Excluir um usuário define `deletedAt`, inativa sua conta e revoga sessões. O cadastro deixa a lista, mas permanece no banco para manter a autoria do histórico. E-mail e matrícula continuam reservados. A própria conta do administrador não pode ser excluída.
 - A validade é uma data opcional do material, sem controle separado de lotes. Um material com validade vencida recebe indicação na interface; isso não bloqueia automaticamente movimentações.
 - Os modelos de documentos geram arquivos PDF a partir dos campos preenchidos; não registram entradas, saídas ou transferências no banco.
-- Listagens na interface paginam os registros carregados; a API de materiais/movimentações também oferece paginação opcional. Para bases grandes, priorize consultas paginadas no servidor.
+- A tela de materiais pagina no PostgreSQL, carregando 15 registros por página. Busca, filtros de estoque/validade e ordenação são aplicados antes da paginação, com contagem total dos resultados. As demais telas mantêm a paginação local; a API de movimentações também oferece paginação no banco.
 - Leitura por câmera depende de HTTPS/localhost, permissão de câmera e suporte a BarcodeDetector. Leitores USB que digitam o código e enviam Enter funcionam no campo de código; entrada manual está disponível.
 - Tokens expiram em oito horas; é necessário novo login após expiração. Logout encerra todas as sessões do usuário.
 - PDF/XLSX são gerados no navegador. Relatórios de estoque representam o saldo atual, sem reconstrução de inventário retroativo.

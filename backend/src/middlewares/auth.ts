@@ -13,11 +13,15 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
   } catch {
     throw new AppError(401, 'Sessão expirada.');
   }
+  if (!claims || typeof claims !== 'object' || typeof claims.sub !== 'string' ||
+      !claims.sub || !Number.isInteger(claims.version) || claims.version < 0 ||
+      typeof claims.exp !== 'number' || !Number.isFinite(claims.exp))
+    throw new AppError(401, 'Sessão inválida. Entre novamente.');
   const u = await db.user.findUnique({
     where: { id: String(claims.sub) },
     include: { role: true },
   });
-  if (!u?.active || claims.version !== u.sessionVersion)
+  if (!u?.active || u.deletedAt || claims.version !== u.sessionVersion)
     throw new AppError(401, 'Sessão inválida. Entre novamente.');
   req.session = { id: u.id, role: u.role.name };
   next();

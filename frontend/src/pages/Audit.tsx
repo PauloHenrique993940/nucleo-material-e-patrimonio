@@ -1,9 +1,17 @@
 import { useState } from 'react';
+import { Trash2 } from 'lucide-react';
+import { Modal } from '../components/Modal';
+import { useApp } from '../contexts/AppContext';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { date } from '../utils/format';
 import type { Row } from '../types';
 export function Audit() {
+  const { user, toast } = useApp();
+  const [removal, setRemoval] = useState<Row | 'all' | null>(null);
+  const [confirmation, setConfirmation] = useState('');
+  const [busy, setBusy] = useState(false);
+  const admin = user?.role === 'ADMIN';
   const [q, setQ] = useState(''),
     [page, setPage] = useState(1);
   const query = useQuery<Row[]>({ queryKey: ['audit'], queryFn: () => api('/audit') });
@@ -18,6 +26,19 @@ export function Audit() {
           <h1>Auditoria</h1>
           <p>Registro das operações importantes e dos usuários responsáveis.</p>
         </div>
+        {admin && (
+          <button
+            className="danger"
+            disabled={query.isPending || query.isError || !query.data?.length || busy}
+            onClick={() => {
+              setRemoval('all');
+              setConfirmation('');
+            }}
+          >
+            <Trash2 size={17} />
+            Limpar auditoria
+          </button>
+        )}
       </div>
       <section className="card">
         <div className="filters">
@@ -49,6 +70,7 @@ export function Audit() {
                     {['Data/hora', 'Usuário', 'Operação', 'Registro afetado', 'IP'].map((x) => (
                       <th key={x}>{x}</th>
                     ))}
+                    {admin && <th>Ações</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -61,6 +83,24 @@ export function Audit() {
                       </td>
                       <td className="mono">{r.recordId}</td>
                       <td>{r.ip || '—'}</td>
+                      {admin && (
+                        <td>
+                          <div className="row-actions">
+                            <button
+                              className="action-delete"
+                              aria-label={'Excluir registro de ' + date(r.date)}
+                              title="Excluir registro"
+                              disabled={busy}
+                              onClick={() => {
+                                setRemoval(r);
+                                setConfirmation('');
+                              }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -81,6 +121,75 @@ export function Audit() {
           </>
         )}
       </section>
+      {removal && (
+        <Modal
+          title={removal === 'all' ? 'Limpar auditoria' : 'Excluir registro de auditoria'}
+          onClose={() => {
+            if (!busy) setRemoval(null);
+          }}
+        >
+          <p>
+            {removal === 'all'
+              ? 'Todos os registros de auditoria serão apagados, inclusive os que não aparecem nesta página ou na busca. Novas operações continuarão sendo registradas.'
+              : 'Este registro de auditoria será apagado definitivamente.'}
+          </p>
+          {removal !== 'all' && (
+            <p>
+              <strong>{removal.operation}</strong> · {date(removal.date)} · {removal.user.name}
+            </p>
+          )}
+          <p className="field-error">A exclusão não pode ser desfeita.</p>
+          <label>
+            Digite {removal === 'all' ? 'LIMPAR AUDITORIA' : 'EXCLUIR'} para confirmar
+            <input
+              value={confirmation}
+              onChange={(e) => setConfirmation(e.target.value)}
+              disabled={busy}
+              autoComplete="off"
+            />
+          </label>
+          <div className="form-actions">
+            <button disabled={busy} onClick={() => setRemoval(null)}>
+              Cancelar
+            </button>
+            <button
+              className="danger"
+              disabled={
+                busy || confirmation !== (removal === 'all' ? 'LIMPAR AUDITORIA' : 'EXCLUIR')
+              }
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  if (removal === 'all') {
+                    const result = await api<{ deleted: number }>('/audit', 'DELETE', {
+                      confirmation,
+                    });
+                    toast(result.deleted + ' registros de auditoria apagados.');
+                    setQ('');
+                  } else {
+                    await api('/audit/' + removal.id, 'DELETE', { confirmation });
+                    toast('Registro de auditoria apagado.');
+                  }
+                  setPage(1);
+                  setRemoval(null);
+                  setConfirmation('');
+                  await query.refetch();
+                } catch (e) {
+                  toast((e as Error).message, true);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy
+                ? 'Apagando…'
+                : removal === 'all'
+                  ? 'Confirmar e limpar tudo'
+                  : 'Confirmar exclusão'}
+            </button>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }
