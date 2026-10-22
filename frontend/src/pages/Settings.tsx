@@ -1,4 +1,5 @@
 import { useApp } from '../contexts/AppContext';
+import { Appearance } from '../components/Appearance';
 import { EntityForm } from '../components/EntityForm';
 import { api } from '../services/api';
 export function Settings() {
@@ -16,6 +17,7 @@ export function Settings() {
         <h2>Aparência</h2>
         <p>Tema atual: {dark ? 'escuro' : 'claro'}.</p>
         <button onClick={toggleTheme}>Alternar tema</button>
+        <Appearance />
       </section>
       <section className="card settings-password">
         <h2>Alterar senha</h2>

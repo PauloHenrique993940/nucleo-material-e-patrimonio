@@ -1,0 +1,65 @@
+html body,
+body button,
+body input,
+body select,
+body textarea {
+  font-family: var(--custom-font, 'Segoe UI', sans-serif);
+}
+:root[data-uppercase='true'] .app-shell,
+:root[data-uppercase='true']
+  .app-shell
+  :where(h1, h2, h3, p, span, small, a, button, label, th, td, select, option, input, textarea),
+:root[data-uppercase='true'] .app-modal,
+:root[data-uppercase='true']
+  .app-modal
+  :where(h1, h2, h3, p, span, small, a, button, label, th, td, select, option, input, textarea),
+:root[data-uppercase='true'] .toast {
+  text-transform: uppercase;
+}
+.app-shell .sidebar {
+  background: var(--custom-sidebar, #07264f);
+}
+.appearance-settings {
+  margin-top: 20px;
+}
+.appearance-settings > select {
+  display: block;
+  margin: 8px 0 20px;
+  width: min(100%, 360px);
+}
+.appearance-uppercase {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.appearance-uppercase input {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+}
+.appearance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 20px;
+  margin: 20px 0;
+}
+.appearance-color {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 8px;
+}
+.appearance-color input[type='color'] {
+  width: 64px;
+  height: 42px;
+  padding: 4px;
+  cursor: pointer;
+}
+.appearance-preview {
+  padding: 20px;
+  margin: 20px 0;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}

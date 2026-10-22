@@ -15,6 +15,9 @@ const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m
 import './styles.css';
 import './internal.css';
 import './login.css';
+import './appearance.css';
+import { initializeAppearance } from './components/Appearance';
+initializeAppearance();
 const client = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 15000 } } });
 function App() {
   const { user, ready } = useApp();
